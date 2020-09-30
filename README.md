@@ -1,2 +1,2 @@
-# ablesync
+# AbleSync
 Automatic Ableton synchronization
