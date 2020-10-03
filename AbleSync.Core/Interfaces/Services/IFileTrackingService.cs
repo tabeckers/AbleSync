@@ -1,5 +1,6 @@
 ﻿using AbleSync.Core.Types;
 using System;
+using System.IO;
 
 namespace AbleSync.Core.Interfaces.Services
 {
@@ -9,25 +10,30 @@ namespace AbleSync.Core.Interfaces.Services
     /// </summary>
     public interface IFileTrackingService
     {
+        bool HasTrackingFile(DirectoryInfo directoryInfo);
+
+        TrackingFile GetTrackingFile(DirectoryInfo directoryInfo);
+
         /// <summary>
         ///     Creates a new <see cref="TrackingFile"/> in a project folder.
         /// </summary>
-        /// <param name="relativePath">Project path relative to the base Uri.</param>
+        /// <param name="projectId">The internal project id.</param>
+        /// <param name="directoryInfo">The respective directory.</param>
         /// <returns>The created <see cref="TrackingFile"/>.</returns>
-        TrackingFile CreateTrackingFile(Uri relativePath);
+        TrackingFile CreateTrackingFile(Guid projectId, DirectoryInfo directoryInfo);
 
         /// <summary>
         ///     Updates a <see cref="TrackingFile"/> in a project folder.
         /// </summary>
-        /// <param name="relativePath">Project path relative to the base Uri.</param>
+        /// <param name="directoryInfo">The respective directory.</param>
         /// <param name="trackingFile"><see cref="TrackingFile"/> containing all updates.</param>
         /// <returns>The updated <see cref="TrackingFile"/>.</returns>
-        TrackingFile UpdateTrackingFile(Uri relativePath, TrackingFile trackingFile);
+        TrackingFile UpdateTrackingFile(DirectoryInfo directoryInfo, TrackingFile trackingFile);
 
         /// <summary>
         ///     Deletes a <see cref="TrackingFile"/> in a project folder.
         /// </summary>
-        /// <param name="relativePath">Project path relative to the base Uri.</param>
-        void DeleteTrackingFile(Uri relativePath);
+        /// <param name="directoryInfo">The respective directory.</param>
+        void DeleteTrackingFile(DirectoryInfo directoryInfo);
     }
 }

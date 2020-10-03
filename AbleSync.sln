@@ -3,7 +3,12 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.30011.22
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AbleSync.Core", "AbleSync.Core\AbleSync.Core.csproj", "{AFF46EEE-3194-4704-A8CF-4EEFA4BF206D}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AbleSync.Core", "AbleSync.Core\AbleSync.Core.csproj", "{AFF46EEE-3194-4704-A8CF-4EEFA4BF206D}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{FB116571-6420-4FEF-B126-D9E1EFE42BF7}"
+	ProjectSection(SolutionItems) = preProject
+		.editorconfig = .editorconfig
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
