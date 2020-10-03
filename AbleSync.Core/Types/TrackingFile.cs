@@ -5,6 +5,8 @@ namespace AbleSync.Core.Types
     /// <summary>
     ///     Represents a tracking file for a project.
     /// </summary>
+    // TODO Do we want this in here?
+    [Serializable]
     public sealed class TrackingFile
     {
         /// <summary>
@@ -16,5 +18,10 @@ namespace AbleSync.Core.Types
         ///     Represents the last moment this was updated and synced.
         /// </summary>
         public DateTimeOffset DateUpdated { get; set; }
+
+        /// <summary>
+        ///     Indicates the status of this project.
+        /// </summary>
+        public ProjectStatus ProjectStatus { get; set; }
     }
 }
