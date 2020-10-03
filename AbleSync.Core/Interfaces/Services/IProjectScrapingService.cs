@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Threading.Tasks;
 
 namespace AbleSync.Core.Interfaces.Services
@@ -19,19 +20,16 @@ namespace AbleSync.Core.Interfaces.Services
         ///     and write these changes to the tracking file. Any required operations
         ///     on our project will also be created or updated in our data store.
         /// </summary>
-        /// <param name="relativePath"></param>
-        /// <returns></returns>
-        Task ProcessProjectAsync(Uri relativePath);
+        /// <param name="directoryInfo">The directory to process.</param>
+        /// <returns><see cref="Task"/></returns>
+        Task ProcessAbletonProjectFolderAsync(DirectoryInfo directoryInfo);
 
         /// <summary>
-        ///     This will call <see cref="ProcessProjectAsync(Uri)"/> recursively
+        ///     This will call <see cref="ProcessAbletonProjectFolderAsync(Uri)"/> recursively
         ///     for a given relative path.
         /// </summary>
-        /// <remarks>
-        ///     The <paramref name="relativePath"/> may be null to process the root.
-        /// </remarks>
-        /// <param name="relativePath">Relative path with regards to the root uri.</param>
-        /// <returns></returns>
-        Task ProcessFolderRecursivelyAsync(Uri relativePath);
+        /// <param name="directoryInfo">The directory to process recursively.</param>
+        /// <returns><see cref="Task"/></returns>
+        Task ProcessDirectoryRecursivelyAsync(DirectoryInfo directoryInfo);
     }
 }
