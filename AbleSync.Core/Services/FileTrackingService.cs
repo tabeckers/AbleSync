@@ -174,7 +174,7 @@ namespace AbleSync.Core.Services
         /// </summary>
         /// <param name="directoryInfo">The directory.</param>
         /// <param name="trackingFile">The tracking file to write.</param>
-        private void WriteToFile(DirectoryInfo directoryInfo, TrackingFile trackingFile)
+        private static void WriteToFile(DirectoryInfo directoryInfo, TrackingFile trackingFile)
         {
             var path = $"{directoryInfo.FullName}/{trackingFile.ProjectId}{Constants.TrackingFileExtension}";
             using var stream = new FileStream(path, FileMode.Create);
