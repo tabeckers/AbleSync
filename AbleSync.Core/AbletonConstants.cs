@@ -34,5 +34,11 @@
         ///     File extension of the project info file.
         /// </summary>
         public const string ProjectInfoFileExtension = ".cfg";
+
+        /// <summary>
+        ///     The part of an Ableton project folder name that gets
+        ///     appended by default.
+        /// </summary>
+        public const string ProjectDirectoryNameAppend = " Project";
     }
 }
