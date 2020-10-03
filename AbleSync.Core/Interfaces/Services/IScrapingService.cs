@@ -1,10 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace AbleSync.Core.Interfaces.Services
 {
+    // TODO Update the description (and goal) for this interface. Too vague!
     /// <summary>
     ///     Contract for a scraping service which is capable of fully processing
     ///     a single project or all projects in a folder.
