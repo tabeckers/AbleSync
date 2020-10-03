@@ -1,4 +1,5 @@
-﻿using AbleSync.Core.Exceptions;
+﻿using AbleSync.Core.Entities;
+using AbleSync.Core.Exceptions;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -59,6 +60,41 @@ namespace AbleSync.Core.Helpers
                 throw new FileAccessException("Could not determine if directory was Ableton project", e);
             }
         }
+
+        /// <summary>
+        ///     Extracts a <see cref="Project"/> from its directory.
+        /// </summary>
+        /// <param name="directoryInfo">The directory to extract from.</param>
+        /// <returns>The extracted <see cref="Project"/>.</returns>
+        public static Project ExtractProject(DirectoryInfo directoryInfo)
+        {
+            if (directoryInfo == null)
+            {
+                throw new ArgumentNullException(nameof(directoryInfo));
+            }
+
+            if (!IsAbletonProjectFolder(directoryInfo))
+            {
+                throw new NotAnAbletonProjectFolderException();
+            }
+
+            return new Project
+            {
+                Name = ExtractProjectName(directoryInfo),
+                // TODO Relative Path --> Maybe not static after all?
+            };
+        }
+
+        // TODO This might bug out.
+        /// <summary>
+        ///     Extracts the name of an Ableton project from its directory.
+        /// </summary>
+        /// <param name="directoryInfo"></param>
+        /// <returns></returns>
+        private static string ExtractProjectName(DirectoryInfo directoryInfo)
+            => directoryInfo.Name.Contains(AbletonConstants.ProjectDirectoryNameAppend)
+                ? directoryInfo.Name.Replace(AbletonConstants.ProjectDirectoryNameAppend, "")
+                : directoryInfo.Name;
 
         /// <summary>
         ///     Checks if a collection of directories contains a specific directory
