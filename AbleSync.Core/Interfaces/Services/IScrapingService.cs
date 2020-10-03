@@ -3,17 +3,21 @@ using System.Threading.Tasks;
 
 namespace AbleSync.Core.Interfaces.Services
 {
-    // TODO Update the description (and goal) for this interface. Too vague!
     /// <summary>
-    ///     Contract for a scraping service which is capable of fully processing
-    ///     a single project or all projects in a folder.
+    ///     Contract for a scraping service which recursively scans a root directory
+    ///     and gets all Ableton project directories. Each retrieved item will be
+    ///     processed and it's metadata will be synchronized with our data store.
     /// </summary>
+    /// <remarks>
+    ///     This does not actually perform any operations other than metadata syncs.
+    /// </remarks>
     public interface IProjectScrapingService
     {
         /// <summary>
         ///     This gets or creates the tracking file for a given project. Then
         ///     this will analyze the project, store the changes in our datastore
-        ///     and write these changes to the tracking file.
+        ///     and write these changes to the tracking file. Any required operations
+        ///     on our project will also be created or updated in our data store.
         /// </summary>
         /// <param name="relativePath"></param>
         /// <returns></returns>
