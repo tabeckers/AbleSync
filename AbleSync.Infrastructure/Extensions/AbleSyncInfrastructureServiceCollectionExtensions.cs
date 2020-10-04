@@ -28,6 +28,7 @@ namespace AbleSync.Infrastructure.Extensions
 
             // Add repositories.
             services.AddScoped<IProjectRepository, ProjectRepository>();
+            services.AddScoped<IProjectTaskRepository, ProjectTaskRepository>();
 
             return services;
         }
