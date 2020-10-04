@@ -1,5 +1,8 @@
-﻿using System;
+﻿using AbleSync.Core.Exceptions;
+using System;
 using System.Data.Common;
+using System.Globalization;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace AbleSync.Infrastructure.Extensions
@@ -54,73 +57,30 @@ namespace AbleSync.Infrastructure.Extensions
         }
 
         /// <summary>
-        ///     Executes the query and returns the first column of the first row as integer.
-        /// </summary>
-        /// <param name="command">The command to extend.</param>
-        /// <returns>Integer.</returns>
-        public static async ValueTask<int> ExecuteScalarIntAsync(this DbCommand command)
-        {
-            if (command == null)
-            {
-                throw new ArgumentNullException(nameof(command));
-            }
-
-            return Convert.ToInt32(await command.ExecuteScalarEnsureRowAsync(), CultureInfo.InvariantCulture);
-        }
-
-        /// <summary>
         ///     Executes the query and returns the first column of the first row as unsigned integer.
         /// </summary>
         /// <param name="command">The command to extend.</param>
+        /// <param name="token">The cancellation token.</param>
         /// <returns>Unsigned integer.</returns>
-        public static async ValueTask<uint> ExecuteScalarUnsignedIntAsync(this DbCommand command)
+        public static async ValueTask<uint> ExecuteScalarUnsignedIntAsync(this DbCommand command, CancellationToken token)
         {
             if (command == null)
             {
                 throw new ArgumentNullException(nameof(command));
             }
 
-            return Convert.ToUInt32(await command.ExecuteScalarEnsureRowAsync(), CultureInfo.InvariantCulture);
-        }
-
-        /// <summary>
-        ///     Executes the query and returns the first column of the first row as long integer.
-        /// </summary>
-        /// <param name="command">The command to extend.</param>
-        /// <returns>Long integer.</returns>
-        public static async ValueTask<long> ExecuteScalarLongAsync(this DbCommand command)
-        {
-            if (command == null)
-            {
-                throw new ArgumentNullException(nameof(command));
-            }
-
-            return Convert.ToInt64(await command.ExecuteScalarEnsureRowAsync(), CultureInfo.InvariantCulture);
-        }
-
-        /// <summary>
-        ///     Executes the query and returns the first column of the first row as unsigned long integer.
-        /// </summary>
-        /// <param name="command">The command to extend.</param>
-        /// <returns>Unsigned long integer.</returns>
-        public static async ValueTask<ulong> ExecuteScalarUnsignedLongAsync(this DbCommand command)
-        {
-            if (command == null)
-            {
-                throw new ArgumentNullException(nameof(command));
-            }
-
-            return Convert.ToUInt64(await command.ExecuteScalarEnsureRowAsync(), CultureInfo.InvariantCulture);
+            return Convert.ToUInt32(await command.ExecuteScalarEnsureRowAsync(token), CultureInfo.InvariantCulture);
         }
 
         /// <summary>
         ///     Execute command and ensure success.
         /// </summary>
         /// <param name="command">The command to extend.</param>
+        /// <param name="token">The cancellation token.</param>
         /// <returns>Scalar result.</returns>
-        public static async ValueTask<object> ExecuteScalarEnsureRowAsync(this DbCommand command)
+        public static async ValueTask<object> ExecuteScalarEnsureRowAsync(this DbCommand command, CancellationToken token)
         {
-            var result = await command.ExecuteScalarAsync();
+            var result = await command.ExecuteScalarAsync(token);
             if (result == null)
             {
                 throw new EntityNotFoundException();
@@ -141,19 +101,6 @@ namespace AbleSync.Infrastructure.Extensions
                 throw new EntityNotFoundException();
             }
             return reader;
-        }
-
-        /// <summary>
-        ///     Execute command and ensure success.
-        /// </summary>
-        /// <param name="command">The command to extend.</param>
-        public static async ValueTask ExecuteNonQueryEnsureAffectedAsync(this DbCommand command)
-        {
-            int affected = await command.ExecuteNonQueryAsync();
-            if (affected <= 0)
-            {
-                throw new EntityNotFoundException();
-            }
         }
     }
 }

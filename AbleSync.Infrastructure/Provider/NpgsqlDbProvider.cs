@@ -1,6 +1,8 @@
-﻿using Microsoft.Extensions.Configuration;
+﻿using AbleSync.Core.Types;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
 using Npgsql;
+using Npgsql.TypeMapping;
 using System.Data.Common;
 
 namespace AbleSync.Infrastructure.Provider
@@ -18,12 +20,13 @@ namespace AbleSync.Infrastructure.Provider
         {
         }
 
+        // FUTURE: Move somewhere. Too npgsql specific
         /// <summary>
         ///     Static initializer.
         /// </summary>
         static NpgsqlDbProvider()
         {
-            // TODO Add mapping here.
+            NpgsqlConnection.GlobalTypeMapper.MapEnum<ProjectStatus>("entities.project_status");
         }
 
         /// <summary>
@@ -32,6 +35,7 @@ namespace AbleSync.Infrastructure.Provider
         /// <returns>The opened <see cref="NpgsqlConnection"/>.</returns>
         public override DbConnection GetConnectionScope() => new NpgsqlConnection(ConnectionString);
 
+        // TODO Check for SQL injection.
         /// <summary>
         ///     Create a new Npgsql command on the database connection.
         /// </summary>
@@ -39,6 +43,8 @@ namespace AbleSync.Infrastructure.Provider
         /// <param name="connection">Database connection, see <see cref="DbConnection"/>.</param>
         /// <returns>See <see cref="DbCommand"/>.</returns>
         public override DbCommand CreateCommand(string cmdText, DbConnection connection)
+#pragma warning disable CA2100 // Review SQL queries for security vulnerabilities
             => new NpgsqlCommand(cmdText, connection as NpgsqlConnection);
+#pragma warning restore CA2100 // Review SQL queries for security vulnerabilities
     }
 }

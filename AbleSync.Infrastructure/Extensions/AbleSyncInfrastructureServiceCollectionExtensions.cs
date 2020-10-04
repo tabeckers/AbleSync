@@ -1,4 +1,5 @@
 ﻿using AbleSync.Core.Interfaces.Repositories;
+using AbleSync.Infrastructure.Provider;
 using AbleSync.Infrastructure.Repositories;
 using Microsoft.Extensions.DependencyInjection;
 using System;
@@ -21,6 +22,9 @@ namespace AbleSync.Infrastructure.Extensions
             {
                 throw new ArgumentNullException(nameof(services));
             }
+
+            // Add custom db provider.
+            services.AddScoped<DbProvider, NpgsqlDbProvider>();
 
             // Add repositories.
             services.AddScoped<IProjectRepository, ProjectRepository>();

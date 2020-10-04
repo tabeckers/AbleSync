@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Configuration;
+﻿using AbleSync.Core.Exceptions;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
 using System;
 using System.Data.Common;
@@ -28,8 +29,8 @@ namespace AbleSync.Infrastructure.Provider
                 throw new ArgumentNullException(nameof(configuration));
             }
 
-            // TODO Format error.
-            ConnectionString = configuration.GetConnectionString(options.Value.ConnectionStringName) ?? throw new ArgumentNullException("Can't find connection string");
+            ConnectionString = configuration.GetConnectionString(options.Value.ConnectionStringName) 
+                ?? throw new ConfigurationException(nameof(DbProvider));
         }
 
         /// <summary>
@@ -71,7 +72,9 @@ namespace AbleSync.Infrastructure.Provider
             var cmd = connection.CreateCommand();
 
             // TODO SQL injection.
+#pragma warning disable CA2100 // Review SQL queries for security vulnerabilities
             cmd.CommandText = commandText;
+#pragma warning restore CA2100 // Review SQL queries for security vulnerabilities
             return cmd;
         }
     }

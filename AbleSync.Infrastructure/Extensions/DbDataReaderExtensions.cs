@@ -120,6 +120,22 @@ namespace AbleSync.Infrastructure.Extensions
         }
 
         /// <summary>
+        ///     Return value as nullable guid.
+        /// </summary>
+        /// <param name="reader">Input reader to extend.</param>
+        /// <param name="ordinal">Column ordinal.</param>
+        /// <returns>Value as nullable guid.</returns>
+        public static Guid? GetSafeGuid(this DbDataReader reader, int ordinal)
+        {
+            if (reader == null)
+            {
+                throw new ArgumentNullException(nameof(reader));
+            }
+
+            return reader.IsDBNull(ordinal) ? null as Guid? : reader.GetGuid(ordinal);
+        }
+
+        /// <summary>
         ///     Return value as nullable datetime.
         /// </summary>
         /// <param name="reader">Input reader to extend.</param>

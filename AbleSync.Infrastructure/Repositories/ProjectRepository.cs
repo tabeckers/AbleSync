@@ -1,4 +1,5 @@
 ﻿using AbleSync.Core.Entities;
+using AbleSync.Core.Exceptions;
 using AbleSync.Core.Interfaces.Repositories;
 using AbleSync.Core.Types;
 using AbleSync.Infrastructure.Extensions;
@@ -37,42 +38,162 @@ namespace AbleSync.Infrastructure.Repositories
             {
                 throw new ArgumentNullException(nameof(project));
             }
+            if (token == null)
+            {
+                throw new ArgumentNullException(nameof(token));
+            }
 
-            // TODO Implement.
+            // TODO Pick a format.
             var sql = @"
                 INSERT INTO entities.project (
-    
+                            artist_id,
+                            name,
+                            relative_path 
                 )
-                VALUES (
-    
+                VALUES (    @artist_id,
+                            @name,
+                            @relative_path
                 )
-                RETURNING id;
-                ";
+                RETURNING   id";
 
-            await using var connection = await DbProvider.OpenConnectionScopeAsync(token);
-            await using var command = DbProvider.CreateCommand(sql, connection);
+            await using var connection = await _provider.OpenConnectionScopeAsync(token);
+            await using var command = _provider.CreateCommand(sql, connection);
 
             MapToWriter(command, project);
 
-            await using var reader = await command.ExecuteNonQueryAsync(token);
-            await reader.ReadAsync();
+            await using var reader = await command.ExecuteReaderAsyncEnsureRowAsync();
+            await reader.ReadAsync(token);
 
-            return reader.GetSafeString(0);
+            var id = reader.GetGuid(0);
+            
+            return await GetAsync(id, token);
         }
 
+        // TODO Implement. Do we even want this functionality?
         public Task DeleteAsync(Guid id, CancellationToken token) => throw new NotImplementedException();
 
-        public Task<bool> ExistsAsync(Guid id, CancellationToken token) => throw new NotImplementedException();
+        /// <summary>
+        ///     Checks if a <see cref="Project"/> by a given <paramref name="id"/>
+        ///     exists in our database.
+        /// </summary>
+        /// <param name="id">The id to search for.</param>
+        /// <param name="token">Cancellation token.</param>
+        /// <returns><c>true</c> if the project exists.</returns>
+        public async Task<bool> ExistsAsync(Guid id, CancellationToken token)
+        {
+            if (id == null || id == Guid.Empty)
+            {
+                throw new ArgumentNullException(nameof(id));
+            }
+            if (token == null)
+            {
+                throw new ArgumentNullException(nameof(token));
+            }
 
+            var sql = @"
+                SELECT  count(*)
+                FROM    entities.project
+                WHERE   id = @id";
+
+            await using var connection = await _provider.OpenConnectionScopeAsync(token);
+            await using var command = _provider.CreateCommand(sql, connection);
+
+            command.AddParameterWithValue("id", id);
+
+            var count = await command.ExecuteScalarUnsignedIntAsync(token);
+            if (count > 1)
+            {
+                // FUTURE Custom exception for this?
+                throw new InvalidOperationException("Found more than one entity when looking for a single item");
+            }
+
+            return count == 1;
+        }
+
+        // TODO Implement.
         public Task<IEnumerable<Project>> GetAllAsync(CancellationToken token) => throw new NotImplementedException();
 
-        public Task<Project> GetAsync(Guid id, CancellationToken token) => throw new NotImplementedException();
+        /// <summary>
+        ///     Gets a single <see cref="Project"/> from our database.
+        /// </summary>
+        /// <param name="id">Internal project id.</param>
+        /// <param name="token">Cancellation token.</param>
+        /// <returns>The returned project.</returns>
+        public async Task<Project> GetAsync(Guid id, CancellationToken token)
+        {
+            if (id == null || id == Guid.Empty)
+            {
+                throw new ArgumentNullException(nameof(id));
+            }
+            if (token == null)
+            {
+                throw new ArgumentNullException(nameof(token));
+            }
 
-        public Task<Project> MarkProjectAsync(Guid id, ProjectStatus status, CancellationToken token) => throw new NotImplementedException();
+            var sql = @"
+                SELECT  id,
+                        name,
+                        artist_id,
+                        relative_path,
+                        date_created,
+                        date_updated,
+                        project_status
+                FROM    entities.project
+                WHERE   id = @id
+                LIMIT   1";
+
+            await using var connection = await _provider.OpenConnectionScopeAsync(token);
+            await using var command = _provider.CreateCommand(sql, connection);
+            
+            command.AddParameterWithValue("id", id);
+
+            await using var reader = await command.ExecuteReaderAsyncEnsureRowAsync();
+            await reader.ReadAsync(token);
+
+            return MapFromReader(reader);
+        }
+
+        /// <summary>
+        ///     Marks a <see cref="Project"/> with a given <paramref name="projectStatus"/>.
+        /// </summary>
+        /// <param name="id">The project id.</param>
+        /// <param name="projectStatus">The status to mark the project as.</param>
+        /// <param name="token">Cancellation token.</param>
+        /// <returns>The updated and marked <see cref="Project"/>.</returns>
+        public async Task<Project> MarkProjectAsync(Guid id, ProjectStatus projectStatus, CancellationToken token)
+        {
+            if (id == null || id == Guid.Empty)
+            {
+                throw new ArgumentNullException(nameof(id));
+            }
+            if (token == null)
+            {
+                throw new ArgumentNullException(nameof(token));
+            }
+
+            var sql = @"
+                UPDATE  entities.project
+                SET     project_status = @project_status
+                WHERE   id = @id";
+
+            await using var connection = await _provider.OpenConnectionScopeAsync(token);
+            await using var command = _provider.CreateCommand(sql, connection);
+
+            command.AddParameterWithValue("id", id);
+            command.AddParameterWithValue("project_status", projectStatus);
+
+            var affected = await command.ExecuteNonQueryAsync(token);
+            if (affected == 0)
+            {
+                throw new EntityNotFoundException(nameof(Project));
+            }
+
+            // Get the updated object from the datastore.
+            return await GetAsync(id, token);
+        }
 
         public Task<Project> UpdateAsync(Project project, CancellationToken token) => throw new NotImplementedException();
 
-        // TODO Implement.
         /// <summary>
         ///     Maps from a <see cref="DbDataReader"/> to a <see cref="Project"/>.
         /// </summary>
@@ -82,9 +203,14 @@ namespace AbleSync.Infrastructure.Repositories
            => new Project
            {
                Id = reader.GetGuid(0),
+               Name = reader.GetString(1),
+               ArtistId = reader.GetSafeGuid(2),
+               RelativePath = reader.GetString(3),
+               DateCreated = reader.GetDateTime(4),
+               DateUpdated = reader.GetSafeDateTime(5),
+               ProjectStatus = reader.GetFieldValue<ProjectStatus>(6),
            };
 
-        // TODO Implement.
         /// <summary>
         ///     Maps a <see cref="Project"/> to a <see cref="DbCommand"/>.
         /// </summary>
@@ -92,7 +218,9 @@ namespace AbleSync.Infrastructure.Repositories
         /// <param name="project">The project to write to the command.</param>
         private static void MapToWriter(DbCommand command, Project project)
         {
-            // command.AddParameterWithValue("my_id", project.MyId);
+            command.AddParameterWithValue("artist_id", project.ArtistId);
+            command.AddParameterWithValue("name", project.Name);
+            command.AddParameterWithValue("relative_path", project.RelativePath);
         }
     }
 }
