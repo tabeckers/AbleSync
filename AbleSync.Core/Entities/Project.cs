@@ -1,4 +1,5 @@
-﻿using System;
+﻿using AbleSync.Core.Types;
+using System;
 
 namespace AbleSync.Core.Entities
 {
@@ -15,12 +16,13 @@ namespace AbleSync.Core.Entities
         /// <summary>
         ///     The internal id of the <see cref="Artist"/> that created this project.
         /// </summary>
-        public Guid ArtistId { get; set; }
+        public Guid? ArtistId { get; set; }
 
+        // TODO This should be bulletproof.
         /// <summary>
         ///     Relative path with regards to the base path.
         /// </summary>
-        public Uri RelativePath { get; set; }
+        public string RelativePath { get; set; }
 
         /// <summary>
         ///     Creation time.
@@ -31,5 +33,10 @@ namespace AbleSync.Core.Entities
         ///     Latest update time.
         /// </summary>
         public DateTimeOffset? DateUpdated { get; set; }
+
+        /// <summary>
+        ///     Indicates the status of this project.
+        /// </summary>
+        public ProjectStatus ProjectStatus { get; set; }
     }
 }

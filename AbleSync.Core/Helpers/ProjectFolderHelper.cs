@@ -2,6 +2,7 @@
 using AbleSync.Core.Exceptions;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 
@@ -92,8 +93,8 @@ namespace AbleSync.Core.Helpers
         /// <param name="directoryInfo"></param>
         /// <returns></returns>
         private static string ExtractProjectName(DirectoryInfo directoryInfo)
-            => directoryInfo.Name.Contains(AbletonConstants.ProjectDirectoryNameAppend)
-                ? directoryInfo.Name.Replace(AbletonConstants.ProjectDirectoryNameAppend, "")
+            => directoryInfo.Name.Contains(AbletonConstants.ProjectDirectoryNameAppend, StringComparison.InvariantCulture)
+                ? directoryInfo.Name.Replace(AbletonConstants.ProjectDirectoryNameAppend, "", StringComparison.InvariantCulture)
                 : directoryInfo.Name;
 
         /// <summary>
