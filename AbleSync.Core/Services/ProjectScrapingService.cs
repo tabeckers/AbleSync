@@ -18,6 +18,7 @@ namespace AbleSync.Core.Services
     public class ProjectScrapingService : IProjectScrapingService
     {
         protected readonly IFileTrackingService _fileTrackingService;
+        protected readonly IProjectAnalyzingService _projectAnalyzingService;
         protected readonly IProjectRepository _projectRepository;
         protected readonly ILogger<ProjectScrapingService> _logger;
         protected readonly AbleSyncOptions _options;
@@ -26,11 +27,13 @@ namespace AbleSync.Core.Services
         ///     Create new instance.
         /// </summary>
         public ProjectScrapingService(IFileTrackingService fileTrackingService,
+            IProjectAnalyzingService projectAnalyzingService,
             IProjectRepository projectRepository,
             ILogger<ProjectScrapingService> logger,
             IOptions<AbleSyncOptions> options)
         {
             _fileTrackingService = fileTrackingService ?? throw new ArgumentNullException(nameof(fileTrackingService));
+            _projectAnalyzingService = projectAnalyzingService ?? throw new ArgumentNullException(nameof(projectAnalyzingService));
             _projectRepository = projectRepository ?? throw new ArgumentNullException(nameof(projectRepository));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
@@ -99,6 +102,9 @@ namespace AbleSync.Core.Services
         ///     If the given <paramref name="directoryInfo"/> is not an Ableton 
         ///     project directory, this will throw an exception of type
         ///     <see cref="NotAnAbletonProjectFolderException"/>.
+        ///     
+        ///     Note: This service does not consider the possibility of a project
+        ///     existing in the data store without it having a tracking file.
         /// </remarks>
         /// <param name="directoryInfo">The directory to process.</param>
         /// <param name="token">The cancellation token.</param>
@@ -145,7 +151,7 @@ namespace AbleSync.Core.Services
                     {
                         // The state where there exists a tracking file and where the project
                         // exists in the data store is valid. We can continue to process.
-                        await UpdateProjectAsync(directoryInfo, token);
+                        await ProcessProjectAsync(directoryInfo, token);
                         _logger.LogTrace($"Project with id {trackingFile.ProjectId} has been updated");
                         return;
                     }
@@ -164,10 +170,11 @@ namespace AbleSync.Core.Services
                     var createdProject = await _projectRepository.CreateAsync(extractedProject, token);
                     _fileTrackingService.CreateTrackingFile(createdProject.Id, directoryInfo);
                     _logger.LogTrace($"A new tracking file has been created for project {createdProject.Id} at {directoryInfo.FullName}");
-                    return;
 
-                    // Note: This service does not consider the possibility of a project
-                    // existing in the data store without it having a tracking file.
+                    // Also process
+                    await ProcessProjectAsync(directoryInfo, token);
+
+                    return;
                 }
             }
             catch (IOException e)
@@ -186,16 +193,21 @@ namespace AbleSync.Core.Services
         public Task ProcessRootDirectoryRecursivelyAsync(CancellationToken token)
             => ProcessDirectoryRecursivelyAsync(new DirectoryInfo(_options.RootDirectoryPath.LocalPath), token);
 
-        // TODO Implement.
-        private Task UpdateProjectAsync(DirectoryInfo directoryInfo, CancellationToken token)
+        /// <summary>
+        ///     This performs all required operations on a project that is in
+        ///     sync with our data store.
+        /// </summary>
+        /// <param name="token">Cancellation token.</param>
+        /// <returns><see cref="Task"/></returns>
+        private async Task ProcessProjectAsync(DirectoryInfo directoryInfo, CancellationToken token)
         {
             var trackingFile = _fileTrackingService.GetTrackingFile(directoryInfo);
 
-            // TODO Process
+            await _projectAnalyzingService.SyncTasksForProjectAsync(directoryInfo, token);
 
+            var projectAfterTaskUpdate = await _projectRepository.GetAsync(trackingFile.ProjectId, token);
+            trackingFile.ProjectStatus = projectAfterTaskUpdate.ProjectStatus;
             _fileTrackingService.UpdateTrackingFile(directoryInfo, trackingFile);
-
-            return Task.CompletedTask;
         }
 
     }
