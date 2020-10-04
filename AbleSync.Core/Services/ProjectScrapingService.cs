@@ -4,8 +4,10 @@ using AbleSync.Core.Interfaces.Repositories;
 using AbleSync.Core.Interfaces.Services;
 using AbleSync.Core.Types;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using System;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace AbleSync.Core.Services
@@ -18,17 +20,26 @@ namespace AbleSync.Core.Services
         protected readonly IFileTrackingService _fileTrackingService;
         protected readonly IProjectRepository _projectRepository;
         protected readonly ILogger<ProjectScrapingService> _logger;
+        protected readonly AbleSyncOptions _options;
 
         /// <summary>
         ///     Create new instance.
         /// </summary>
         public ProjectScrapingService(IFileTrackingService fileTrackingService,
             IProjectRepository projectRepository,
-            ILogger<ProjectScrapingService> logger)
+            ILogger<ProjectScrapingService> logger,
+            IOptions<AbleSyncOptions> options)
         {
             _fileTrackingService = fileTrackingService ?? throw new ArgumentNullException(nameof(fileTrackingService));
             _projectRepository = projectRepository ?? throw new ArgumentNullException(nameof(projectRepository));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+
+            // TODO Clean up syntax.
+            if (options == null || options.Value == null)
+            {
+                throw new ArgumentNullException(nameof(options));
+            }
+            _options = options.Value;
         }
 
         /// <summary>
@@ -36,12 +47,17 @@ namespace AbleSync.Core.Services
         ///     recursively for each item in the start directory.
         /// </summary>
         /// <param name="directoryInfo">The directory to process recursively.</param>
+        /// <param name="token">The cancellation token.</param>
         /// <returns>See <see cref="Task"/>.</returns>
-        public async Task ProcessDirectoryRecursivelyAsync(DirectoryInfo directoryInfo)
+        public async Task ProcessDirectoryRecursivelyAsync(DirectoryInfo directoryInfo, CancellationToken token)
         {
             if (directoryInfo == null)
             {
                 throw new ArgumentNullException(nameof(directoryInfo));
+            }
+            if (token == null)
+            {
+                throw new ArgumentNullException(nameof(token));
             }
 
             try
@@ -50,7 +66,7 @@ namespace AbleSync.Core.Services
 
                 if (ProjectFolderHelper.IsAbletonProjectFolder(directoryInfo))
                 {
-                    await ProcessAbletonProjectFolderAsync(directoryInfo);
+                    await ProcessAbletonProjectFolderAsync(directoryInfo, token);
                 }
                 else
                 {
@@ -58,11 +74,11 @@ namespace AbleSync.Core.Services
                     {
                         if (ProjectFolderHelper.IsAbletonProjectFolder(directoryInfo))
                         {
-                            await ProcessAbletonProjectFolderAsync(directoryInfo);
+                            await ProcessAbletonProjectFolderAsync(directoryInfo, token);
                         }
                         else
                         {
-                            await ProcessDirectoryRecursivelyAsync(directory);
+                            await ProcessDirectoryRecursivelyAsync(directory, token);
                         }
                     }
                 }
@@ -85,12 +101,17 @@ namespace AbleSync.Core.Services
         ///     <see cref="NotAnAbletonProjectFolderException"/>.
         /// </remarks>
         /// <param name="directoryInfo">The directory to process.</param>
+        /// <param name="token">The cancellation token.</param>
         /// <returns>See <see cref="Task"/>.</returns>
-        public async Task ProcessAbletonProjectFolderAsync(DirectoryInfo directoryInfo)
+        public async Task ProcessAbletonProjectFolderAsync(DirectoryInfo directoryInfo, CancellationToken token)
         {
             if (directoryInfo == null)
             {
                 throw new ArgumentNullException(nameof(directoryInfo));
+            }
+            if (token == null)
+            {
+                throw new ArgumentNullException(nameof(token));
             }
 
             try
@@ -110,7 +131,7 @@ namespace AbleSync.Core.Services
                         return;
                     }
 
-                    if (!await _projectRepository.ExistsAsync(trackingFile.ProjectId))
+                    if (!await _projectRepository.ExistsAsync(trackingFile.ProjectId, token))
                     {
                         // If the project has a tracking file but does not exist in the store, 
                         // we have reached an invalid state. This should never happen.
@@ -124,7 +145,7 @@ namespace AbleSync.Core.Services
                     {
                         // The state where there exists a tracking file and where the project
                         // exists in the data store is valid. We can continue to process.
-                        await UpdateProjectAsync(directoryInfo);
+                        await UpdateProjectAsync(directoryInfo, token);
                         _logger.LogTrace($"Project with id {trackingFile.ProjectId} has been updated");
                         return;
                     }
@@ -135,7 +156,12 @@ namespace AbleSync.Core.Services
                     // not yet being tracked. This will start tracking the project.
                     // TODO Move this to some helper class.
                     var extractedProject = ProjectFolderHelper.ExtractProject(directoryInfo);
-                    var createdProject = await _projectRepository.CreateAsync(extractedProject);
+
+                    // TODO This should not happen here.
+                    var root = _options.RootDirectoryPath.LocalPath;
+                    extractedProject.RelativePath = PathHelper.GetRelativePath(directoryInfo.FullName, root);
+
+                    var createdProject = await _projectRepository.CreateAsync(extractedProject, token);
                     _fileTrackingService.CreateTrackingFile(createdProject.Id, directoryInfo);
                     _logger.LogTrace($"A new tracking file has been created for project {createdProject.Id} at {directoryInfo.FullName}");
                     return;
@@ -151,8 +177,17 @@ namespace AbleSync.Core.Services
             }
         }
 
+        /// <summary>
+        ///     Calls <see cref="ProcessDirectoryRecursivelyAsync(DirectoryInfo, CancellationToken)"/>
+        ///     with the <see cref="AbleSyncOptions.RootDirectoryPath"/> as the directory.
+        /// </summary>
+        /// <param name="token">The cancellation token.</param>
+        /// <returns><see cref="Task"/></returns>
+        public Task ProcessRootDirectoryRecursivelyAsync(CancellationToken token)
+            => ProcessDirectoryRecursivelyAsync(new DirectoryInfo(_options.RootDirectoryPath.LocalPath), token);
+
         // TODO Implement.
-        private Task UpdateProjectAsync(DirectoryInfo directoryInfo)
+        private Task UpdateProjectAsync(DirectoryInfo directoryInfo, CancellationToken token)
         {
             var trackingFile = _fileTrackingService.GetTrackingFile(directoryInfo);
 
