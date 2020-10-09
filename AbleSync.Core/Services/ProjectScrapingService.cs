@@ -141,8 +141,7 @@ namespace AbleSync.Core.Services
                     {
                         // If the project has a tracking file but does not exist in the store, 
                         // we have reached an invalid state. This should never happen.
-                        trackingFile.ProjectStatus = ProjectStatus.Invalid;
-                        _fileTrackingService.UpdateTrackingFile(directoryInfo, trackingFile);
+                        _fileTrackingService.MarkTrackingFileInvalid(directoryInfo);
                         _logger.LogWarning($"Project with id {trackingFile.ProjectId} has a tracking file" +
                             $"but does not exist in the store - marked as invalid.");
                         return;
@@ -206,8 +205,7 @@ namespace AbleSync.Core.Services
             await _projectAnalyzingService.SyncTasksForProjectAsync(directoryInfo, token);
 
             var projectAfterTaskUpdate = await _projectRepository.GetAsync(trackingFile.ProjectId, token);
-            trackingFile.ProjectStatus = projectAfterTaskUpdate.ProjectStatus;
-            _fileTrackingService.UpdateTrackingFile(directoryInfo, trackingFile);
+            _fileTrackingService.UpdateTrackingFile(directoryInfo, projectAfterTaskUpdate);
         }
 
     }
