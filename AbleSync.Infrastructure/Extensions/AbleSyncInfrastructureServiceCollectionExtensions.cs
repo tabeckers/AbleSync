@@ -1,6 +1,8 @@
 ﻿using AbleSync.Core.Interfaces.Repositories;
+using AbleSync.Core.Interfaces.Services;
 using AbleSync.Infrastructure.Provider;
 using AbleSync.Infrastructure.Repositories;
+using AbleSync.Infrastructure.Storage;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 
@@ -29,6 +31,10 @@ namespace AbleSync.Infrastructure.Extensions
             // Add repositories.
             services.AddScoped<IProjectRepository, ProjectRepository>();
             services.AddScoped<IProjectTaskRepository, ProjectTaskRepository>();
+
+            // TODO Split for file storage.
+            // TODO Options.
+            services.AddSingleton<IBlobStorageService, SpacesBlobStorageService>();
 
             return services;
         }
