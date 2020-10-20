@@ -1,5 +1,6 @@
 ﻿using AbleSync.Core.Entities;
 using AbleSync.Core.Exceptions;
+using AbleSync.Core.Helpers;
 using AbleSync.Core.Interfaces.Services;
 using AbleSync.Core.Types;
 using System;
@@ -107,10 +108,7 @@ namespace AbleSync.Core.Services
             var projectId = trackingFileName.Name.Replace(Constants.TrackingFileExtension, "", StringComparison.InvariantCulture);
 
             var path = $"{directoryInfo.FullName}/{projectId}{Constants.TrackingFileExtension}";
-            using var stream = new FileStream(path, FileMode.Open);
-
-            var formatter = new BinaryFormatter();
-            return (TrackingFile)formatter.Deserialize(stream);
+            return FileHelper.GetFile<TrackingFile>(path);
         }
 
         /// <summary>
