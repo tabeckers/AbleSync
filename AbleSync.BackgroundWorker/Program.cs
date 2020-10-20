@@ -8,7 +8,6 @@ using AbleSync.Infrastructure.Storage;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using System;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -62,23 +61,29 @@ namespace AbleSync.BackgroundWorker
             });
 
             var provider = services.BuildServiceProvider();
-           
+
             // Run the scraper.
-            var scraper = provider.GetRequiredService<IProjectScrapingService>();
+            var projectScrapingService = provider.GetRequiredService<IProjectScrapingService>();
             using var cts = new CancellationTokenSource();
-            await scraper.ProcessRootDirectoryRecursivelyAsync(cts.Token);
+            await projectScrapingService.ProcessRootDirectoryRecursivelyAsync(cts.Token);
 
             // Run the project task processor.
-            var processor = provider.GetRequiredService<IProjectTaskProcessingService>();
+            var projectTaskProcessingService = provider.GetRequiredService<IProjectTaskProcessingService>();
             var projectRepository = provider.GetRequiredService<IProjectRepository>();
             var projectTaskRepository = provider.GetRequiredService<IProjectTaskRepository>();
 
-            using var cts2 = new CancellationTokenSource();
+            var projects = await projectRepository.GetAllAsync(cts.Token).ToListAsync(cts.Token);
+            var projectTasks = await projectTaskRepository.GetAllAsync(cts.Token).ToListAsync(cts.Token);
 
-            var project = await projectRepository.GetAsync(new Guid("48640e0a-ea95-4d4e-acda-b1cfb44d3296"), cts2.Token);
-            var projectTask = (await projectTaskRepository.GetAllForProjectAsync(project.Id, cts2.Token).ToListAsync()).First();
+            foreach (var project in projects)
+            {
+                var thisTasks = projectTasks.Where(x => x.ProjectId == project.Id);
 
-            await processor.ProcessProjectTaskAsync(project, projectTask, cts2.Token);
+                if (thisTasks.Any())
+                {
+                    await projectTaskProcessingService.ProcessProjectTasksAsync(project, thisTasks, cts.Token);
+                }
+            }
         }
     }
 }
