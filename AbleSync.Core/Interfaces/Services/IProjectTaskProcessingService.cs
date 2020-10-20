@@ -1,5 +1,6 @@
 ﻿using AbleSync.Core.Entities;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace AbleSync.Core.Interfaces.Services
@@ -10,8 +11,8 @@ namespace AbleSync.Core.Interfaces.Services
     /// </summary>
     public interface IProjectTaskProcessingService
     {
-        Task ProcessProjectTaskAsync(Project project, ProjectTask task);
+        Task ProcessProjectTaskAsync(Project project, ProjectTask task, CancellationToken token);
 
-        Task ProcessProjectTaskAsync(Project project, IEnumerable<ProjectTask> tasks);
+        Task ProcessProjectTaskAsync(Project project, IEnumerable<ProjectTask> tasks, CancellationToken token);
     }
 }
