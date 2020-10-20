@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -30,6 +31,7 @@ namespace AbleSync.Core.Services
             _fileTrackingService = fileTrackingService ?? throw new ArgumentNullException(nameof(fileTrackingService));
         }
 
+        // TODO Make IAsyncEnumerable
         /// <summary>
         ///     Analyzes a project and determines which <see cref="ProjectTask"/>
         ///     entities will have to be executed for said project.
@@ -55,7 +57,9 @@ namespace AbleSync.Core.Services
 
             var trackingFile = _fileTrackingService.GetTrackingFile(directoryInfo);
 
-            var existingTasks = await _projectTaskRepository.GetAllForProjectAsync(trackingFile.ProjectId, token);
+            var existingTasks = await _projectTaskRepository.GetAllForProjectAsync(trackingFile.ProjectId, token).ToListAsync(token);
+
+            // TODO Check for changes in audio file.
 
             // If we don't have a sync audio task, create one. If we already have
             // one, the background worker will simply sync the latest audio file.
@@ -71,7 +75,7 @@ namespace AbleSync.Core.Services
 
             // FUTURE Here we will determin other types of tasks as well.
 
-            return await _projectTaskRepository.GetAllForProjectAsync(trackingFile.ProjectId, token);
+            return await _projectTaskRepository.GetAllForProjectAsync(trackingFile.ProjectId, token).ToListAsync(token);
         }
 
         /// <summary>
