@@ -64,6 +64,7 @@ namespace AbleSync.Core.Services
                 Types.ProjectTaskType.BackupFull => ExecuteBackupFullAsync(project, task, token),
                 _ => throw new InvalidOperationException(nameof(task.ProjectTaskType)),
             };
+
         }
 
         /// <summary>
@@ -76,7 +77,7 @@ namespace AbleSync.Core.Services
         /// <param name="project">The project to which the tasks belong.</param>
         /// <param name="tasks">The tasks to process.</param>
         /// <param name="token">The cancellation token.</param>
-        public async Task ProcessProjectTaskAsync(Project project, IEnumerable<ProjectTask> tasks, CancellationToken token)
+        public async Task ProcessProjectTasksAsync(Project project, IEnumerable<ProjectTask> tasks, CancellationToken token)
         {
             if (project == null)
             {
@@ -152,6 +153,9 @@ namespace AbleSync.Core.Services
 
             using var fileStream = new FileStream(fullFileName, FileMode.Open, FileAccess.Read);
             await _blobStorageService.StoreFileAsync(directoryName, fileName, contentType, fileStream, token);
+
+            // TODO Here?
+            _logger.LogTrace($"Processed task {task.Id} {task.ProjectTaskType} - uploaded {fileName} to blob storage"); 
         }
 
         // FUTURE: Implement.

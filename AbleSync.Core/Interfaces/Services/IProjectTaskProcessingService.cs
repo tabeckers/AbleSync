@@ -13,6 +13,6 @@ namespace AbleSync.Core.Interfaces.Services
     {
         Task ProcessProjectTaskAsync(Project project, ProjectTask task, CancellationToken token);
 
-        Task ProcessProjectTaskAsync(Project project, IEnumerable<ProjectTask> tasks, CancellationToken token);
+        Task ProcessProjectTasksAsync(Project project, IEnumerable<ProjectTask> tasks, CancellationToken token);
     }
 }
