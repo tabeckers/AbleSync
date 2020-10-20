@@ -11,8 +11,33 @@
         public const string TrackingFileExtension = ".asi";
 
         /// <summary>
+        ///     MP3 extension.
+        /// </summary>
+        public const string AudioMp3FileExtension = ".mp3";
+
+        /// <summary>
+        ///     WAV extension
+        /// </summary>
+        public const string AudioWavFileExtension = ".wav";
+
+        /// <summary>
+        ///     FLAC extension.
+        /// </summary>
+        public const string AudioFlacFileExtension = ".flac";
+
+        /// <summary>
         ///     All known Ableton audio file extensions for exported files.
         /// </summary>
-        public static readonly string[] ExportedAudioFileExtensions = { ".mp3", ".wav", ".flac" };
+        public static readonly string[] ExportedAudioFileExtensions = {
+                AudioMp3FileExtension,
+                AudioWavFileExtension,
+                AudioFlacFileExtension
+            };
+
+        // TODO Implement structure.
+        /// <summary>
+        ///     Project folders storage base folder..
+        /// </summary>
+        public const string StorageProjectFolderBase = "projects";
     }
 }
