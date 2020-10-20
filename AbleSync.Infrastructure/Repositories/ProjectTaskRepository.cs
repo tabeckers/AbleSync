@@ -7,6 +7,7 @@ using AbleSync.Infrastructure.Provider;
 using System;
 using System.Collections.Generic;
 using System.Data.Common;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -77,7 +78,7 @@ namespace AbleSync.Infrastructure.Repositories
         /// <param name="projectId">The project id.</param>
         /// <param name="token">The cancellation token.</param>
         /// <returns>Collection of <see cref="Project"/>s.</returns>
-        public async Task<IEnumerable<ProjectTask>> GetAllForProjectAsync(Guid projectId, CancellationToken token)
+        public async IAsyncEnumerable<ProjectTask> GetAllForProjectAsync(Guid projectId, [EnumeratorCancellation] CancellationToken token)
         {
             if (projectId == null || projectId == Guid.Empty)
             {
@@ -106,14 +107,11 @@ namespace AbleSync.Infrastructure.Repositories
             command.AddParameterWithValue("project_id", projectId);
 
             await using var reader = await command.ExecuteReaderAsync(token);
-            var result = new List<ProjectTask>();
 
             while (await reader.ReadAsync(token))
             {
-                result.Add(MapFromReader(reader));
+                yield return MapFromReader(reader);
             }
-
-            return result;
         }
 
         /// <summary>
@@ -213,5 +211,39 @@ namespace AbleSync.Infrastructure.Repositories
                ProjectTaskType = reader.GetFieldValue<ProjectTaskType>(6),
                TaskParameter = reader.GetSafeString(7),
            };
+
+        /// <summary>
+        ///     Gets all project tasks from our database.
+        /// </summary>
+        /// <param name="token">The cancellation token.</param>
+        /// <returns>Collection of project tasks.</returns>
+        public async IAsyncEnumerable<ProjectTask> GetAllAsync([EnumeratorCancellation] CancellationToken token)
+        {
+            if (token == null)
+            {
+                throw new ArgumentNullException(nameof(token));
+            }
+
+            var sql = @"
+                SELECT  id,
+                        project_id,
+                        date_created,
+                        date_updated,
+                        date_completed,
+                        project_task_status,
+                        project_task_type,
+                        task_parameter
+                FROM    entities.project_task";
+
+            await using var connection = await _provider.OpenConnectionScopeAsync(token);
+            await using var command = _provider.CreateCommand(sql, connection);
+
+            await using var reader = await command.ExecuteReaderAsync(token);
+
+            while (await reader.ReadAsync(token))
+            {
+                yield return MapFromReader(reader);
+            }
+        }
     }
 }

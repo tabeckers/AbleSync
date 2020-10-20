@@ -21,12 +21,19 @@ namespace AbleSync.Core.Interfaces.Repositories
         Task<ProjectTask> CreateAsync(ProjectTask projectTask, CancellationToken token);
 
         /// <summary>
+        ///     Gets all the <see cref="ProjectTask"/> entities from our data store.
+        /// </summary>
+        /// <param name="token">The cancellation token.</param>
+        /// <returns>Collection of project tasks.</returns>
+        IAsyncEnumerable<ProjectTask> GetAllAsync(CancellationToken token);
+
+        /// <summary>
         ///     Gets all <see cref="ProjectTask"/>s for a given <see cref="Project"/>.
         /// </summary>
         /// <param name="projectId">The project id.</param>
         /// <param name="token">The cancellation token.</param>
         /// <returns>Collection of <see cref="Project"/>s.</returns>
-        Task<IEnumerable<ProjectTask>> GetAllForProjectAsync(Guid projectId, CancellationToken token);
+        IAsyncEnumerable<ProjectTask> GetAllForProjectAsync(Guid projectId, CancellationToken token);
 
         /// <summary>
         ///     Gets a <see cref="ProjectTask"/> from our data store.
