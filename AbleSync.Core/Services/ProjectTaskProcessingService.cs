@@ -128,17 +128,17 @@ namespace AbleSync.Core.Services
             if (audioFiles.Where(x => x.Extension == Constants.AudioMp3FileExtension).Any())
             {
                 audioFile = audioFiles.Where(x => x.Extension == Constants.AudioMp3FileExtension).First();
-                contentType = "audio/mpeg3"; // TODO Move to constants.
+                contentType = Constants.ContentTypeMp3;
             }
             else if (audioFiles.Where(x => x.Extension == Constants.AudioWavFileExtension).Any())
             {
                 audioFile = audioFiles.Where(x => x.Extension == Constants.AudioWavFileExtension).First();
-                contentType = "audio/wav"; // TODO Move to constants.
+                contentType = Constants.ContentTypeWav;
             }
             else if (audioFiles.Where(x => x.Extension == Constants.AudioFlacFileExtension).Any())
             {
                 audioFile = audioFiles.Where(x => x.Extension == Constants.AudioFlacFileExtension).First();
-                contentType = "audio/flac"; // TODO Move to constants.
+                contentType = Constants.ContentTypeFlac;
             }
             else
             {

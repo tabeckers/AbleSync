@@ -39,5 +39,11 @@
         ///     Project folders storage base folder..
         /// </summary>
         public const string StorageProjectFolderBase = "projects";
+
+        public const string ContentTypeMp3 = "audio/mpeg3";
+
+        public const string ContentTypeWav = "audio/wav";
+
+        public const string ContentTypeFlac = "audio/flac";
     }
 }

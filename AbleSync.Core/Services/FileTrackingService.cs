@@ -11,7 +11,6 @@ using System.Threading.Tasks;
 
 namespace AbleSync.Core.Services
 {
-    // TODO Custom exceptions.
     /// <summary>
     ///     Service for managing tracking files.
     /// </summary>
@@ -101,7 +100,7 @@ namespace AbleSync.Core.Services
             }
             if (trackingFileCandidates.Count() > 1)
             {
-                throw new InvalidOperationException("Can't have more than one tracking file");
+                throw new MultipleTrackingFilesException();
             }
 
             var trackingFileName = trackingFileCandidates.First();
@@ -132,7 +131,7 @@ namespace AbleSync.Core.Services
             }
             if (trackingFileCandidates.Count() > 1)
             {
-                throw new InvalidOperationException("Can't have more than one tracking file");
+                throw new MultipleTrackingFilesException();
             }
 
             return true;
