@@ -1,6 +1,8 @@
 ﻿using AbleSync.Core.Entities;
+using AbleSync.Core.Exceptions;
 using AbleSync.Core.Interfaces.Repositories;
 using AbleSync.Core.Interfaces.Services;
+using AbleSync.Core.Types;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System;
@@ -15,8 +17,14 @@ namespace AbleSync.Core.Services
     /// <summary>
     ///     Service for processing project tasks.
     /// </summary>
-    public class ProjectTaskProcessingService : IProjectTaskProcessingService
+    /// <remarks>
+    ///     This will first create the project task in the
+    ///     data store, then execute, then sync execution
+    ///     outcome (success/failure) with the data store.
+    /// </remarks>
+    public class ProjectTaskProcessingService : IProjectTaskExecuterService
     {
+        private readonly IProjectRepository _projectRepository;
         private readonly IProjectTaskRepository _projectTaskRepository;
         private readonly IBlobStorageService _blobStorageService;
         private readonly ILogger<ProjectTaskProcessingService> _logger;
@@ -25,11 +33,13 @@ namespace AbleSync.Core.Services
         /// <summary>
         ///     Create new instance.
         /// </summary>
-        public ProjectTaskProcessingService(IProjectTaskRepository projectTaskRepository,
+        public ProjectTaskProcessingService(IProjectRepository projectRepository,
+            IProjectTaskRepository projectTaskRepository,
             IBlobStorageService blobStorageService,
             ILogger<ProjectTaskProcessingService> logger,
             IOptions<AbleSyncOptions> options)
         {
+            _projectRepository = projectRepository ?? throw new ArgumentNullException(nameof(projectRepository));
             _projectTaskRepository = projectTaskRepository ?? throw new ArgumentNullException(nameof(projectTaskRepository));
             _blobStorageService = blobStorageService ?? throw new ArgumentNullException(nameof(blobStorageService));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -39,16 +49,15 @@ namespace AbleSync.Core.Services
         /// <summary>
         ///     Processes a single project task.
         /// </summary>
-        /// <param name="project">The project to which the project task belongs.</param>
+        /// <remarks>
+        ///     First this syncs the task with the data store, then 
+        ///     the task is executed, then the success or failure is
+        ///     synced with the data store.
+        /// </remarks>
         /// <param name="task">The project task.</param>
         /// <param name="token">The cancellation token.</param>
-        /// <returns>See <see cref="Task"/>.</returns>
-        public Task ProcessProjectTaskAsync(Project project, ProjectTask task, CancellationToken token)
+        public async Task ProcessProjectTaskAsync(ProjectTask task, CancellationToken token)
         {
-            if (project == null)
-            {
-                throw new ArgumentNullException(nameof(project));
-            }
             if (task == null)
             {
                 throw new ArgumentNullException(nameof(task));
@@ -58,31 +67,33 @@ namespace AbleSync.Core.Services
                 throw new ArgumentNullException(nameof(token));
             }
 
-            return task.ProjectTaskType switch
-            {
-                Types.ProjectTaskType.UploadAudio => ExecuteUploadAudioAsync(project, task, token),
-                Types.ProjectTaskType.BackupFull => ExecuteBackupFullAsync(project, task, token),
-                _ => throw new InvalidOperationException(nameof(task.ProjectTaskType)),
-            };
+            await _projectTaskRepository.CreateAsync(task, token);
 
+            try
+            {
+                await (task.ProjectTaskType switch
+                {
+                    ProjectTaskType.UploadAudio => ExecuteUploadAudioAsync(task, token),
+                    ProjectTaskType.BackupFull => ExecuteBackupFullAsync(task, token),
+                    _ => throw new InvalidOperationException(nameof(task.ProjectTaskType)),
+                });
+
+                await _projectTaskRepository.MarkStatusAsync(task.Id, ProjectTaskStatus.Done, token);
+            } 
+            catch (AbleSyncBaseException e)
+            {
+                _logger.LogError($"Could not process project task {task.Id}", e);
+                await _projectTaskRepository.MarkStatusAsync(task.Id, ProjectTaskStatus.Failed, token);
+            }
         }
 
         /// <summary>
         ///     Processes a collection of tasks.
         /// </summary>
-        /// <remarks>
-        ///     All <paramref name="tasks"/> should belong to the same
-        ///     <paramref name="project"/>.
-        /// </remarks>
-        /// <param name="project">The project to which the tasks belong.</param>
         /// <param name="tasks">The tasks to process.</param>
         /// <param name="token">The cancellation token.</param>
-        public async Task ProcessProjectTasksAsync(Project project, IEnumerable<ProjectTask> tasks, CancellationToken token)
+        public async Task ProcessProjectTasksAsync(IEnumerable<ProjectTask> tasks, CancellationToken token)
         {
-            if (project == null)
-            {
-                throw new ArgumentNullException(nameof(project));
-            }
             if (tasks == null || !tasks.Any())
             {
                 throw new ArgumentNullException(nameof(tasks));
@@ -91,15 +102,11 @@ namespace AbleSync.Core.Services
             {
                 throw new ArgumentNullException(nameof(token));
             }
-            if (tasks.Where(x => x.ProjectId != project.Id).Any())
-            {
-                throw new InvalidOperationException("All tasks should belong to the same project.");
-            }
 
             // FUTURE AsyncEnumerable
             foreach (var task in tasks)
             {
-                await ProcessProjectTaskAsync(project, task, token);
+                await ProcessProjectTaskAsync(task, token);
             }
         }
 
@@ -108,11 +115,12 @@ namespace AbleSync.Core.Services
         /// <summary>
         ///     Execute the upload for an audio file.
         /// </summary>
-        /// <param name="project">The project.</param>
         /// <param name="task">The task.</param>
         /// <param name="token">The cancellation token.</param>
-        private async Task ExecuteUploadAudioAsync(Project project, ProjectTask task, CancellationToken token)
+        private async Task ExecuteUploadAudioAsync(ProjectTask task, CancellationToken token)
         {
+            var project = await _projectRepository.GetAsync(task.ProjectId, token);
+
             // TODO Beun, see https://github.com/tabeckers/AbleSync/issues/19
             var parsedPath = project.RelativePath.Replace("\\", "/", StringComparison.InvariantCulture);
             var path = $"{_options.RootDirectoryPath.AbsolutePath}/{parsedPath}";
@@ -155,11 +163,11 @@ namespace AbleSync.Core.Services
             await _blobStorageService.StoreFileAsync(directoryName, fileName, contentType, fileStream, token);
 
             // TODO Here? https://github.com/tabeckers/AbleSync/issues/31
-            _logger.LogTrace($"Processed task {task.Id} {task.ProjectTaskType} - uploaded {fileName} to blob storage"); 
+            _logger.LogTrace($"Processed task {task.Id} {task.ProjectTaskType} - uploaded {fileName} to blob storage");
         }
 
         // FUTURE: Implement.
-        private Task ExecuteBackupFullAsync(Project project, ProjectTask task, CancellationToken token)
+        private Task ExecuteBackupFullAsync(ProjectTask task, CancellationToken token)
             => throw new NotImplementedException();
     }
 }

@@ -1,6 +1,6 @@
 ﻿using AbleSync.Core.Entities;
+using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -10,17 +10,19 @@ namespace AbleSync.Core.Interfaces.Services
     ///     Contract for a service which analyzes a project folder. This will
     ///     determine which <see cref="ProjectTask"/>s have to be executed.
     /// </summary>
+    /// <remarks>
+    ///     This does not sync any project tasks with the data store.
+    /// </remarks>
     public interface IProjectAnalyzingService
     {
-        // TODO Do we really need to return the result?
-        // TODO Do we really need the entire project, isn't the id enough? https://github.com/tabeckers/AbleSync/issues/34
+        // FUTURE Make IAsyncEnumerable
         /// <summary>
-        ///     Analyzes a project and determines which <see cref="ProjectTask"/>
-        ///     entities will have to be executed for said project.
+        ///     Analyze a project and determine all project tasks that have
+        ///     to be executed for it.
         /// </summary>
-        /// <param name="directoryInfo">The project directory.</param>
-        /// <param name="token">Cancellation token.</param>
-        /// <returns>A collection of project tasks for the project.</returns>
-        Task<IEnumerable<ProjectTask>> SyncTasksForProjectAsync(DirectoryInfo directoryInfo, CancellationToken token);
+        /// <param name="projectId">The project to analyze.</param>
+        /// <param name="token">The cancellation token.</param>
+        /// <returns>All project tasks that should be executed.</returns>
+        public Task<IEnumerable<ProjectTask>> AnalyzeProjectAsync(Guid projectId, CancellationToken token);
     }
 }

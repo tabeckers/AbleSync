@@ -4,6 +4,7 @@ using AbleSync.Core.Interfaces.Repositories;
 using AbleSync.Core.Types;
 using AbleSync.Infrastructure.Extensions;
 using AbleSync.Infrastructure.Provider;
+using RenameMe.Utility.Extensions;
 using System;
 using System.Collections.Generic;
 using System.Data.Common;
@@ -137,7 +138,7 @@ namespace AbleSync.Infrastructure.Repositories
             await using var command = _provider.CreateCommand(sql, connection);
 
             await using var reader = await command.ExecuteReaderAsyncEnsureRowAsync();
-            
+
             while (await reader.ReadAsync(token))
             {
                 yield return MapFromReader(reader);
@@ -184,6 +185,42 @@ namespace AbleSync.Infrastructure.Repositories
             return MapFromReader(reader);
         }
 
+        // TODO Maybe add a separate column for scrape dates?
+        /// <summary>
+        ///     Mark a project as scraped by settings its update
+        ///     date to now().
+        /// </summary>
+        /// <param name="id">The project id.</param>
+        /// <param name="token">The cancellation token.</param>
+        /// <returns>The updated project as fetched from the data store.</returns>
+        public async Task<Project> MarkProjectAsScrapedAsync(Guid id, CancellationToken token)
+        {
+            id.ThrowIfNullOrEmpty();
+            if (token == null)
+            {
+                throw new ArgumentNullException(nameof(token));
+            }
+
+            var sql = @"
+                UPDATE  entities.project
+                SET     update_date = now()
+                WHERE   id = @id";
+
+            await using var connection = await _provider.OpenConnectionScopeAsync(token);
+            await using var command = _provider.CreateCommand(sql, connection);
+
+            command.AddParameterWithValue("id", id);
+
+            var affected = await command.ExecuteNonQueryAsync(token);
+            if (affected == 0)
+            {
+                throw new EntityNotFoundException(nameof(Project));
+            }
+
+            // Get the updated object from the datastore.
+            return await GetAsync(id, token);
+        }
+
         /// <summary>
         ///     Marks a <see cref="Project"/> with a given <paramref name="projectStatus"/>.
         /// </summary>
@@ -223,7 +260,8 @@ namespace AbleSync.Infrastructure.Repositories
             return await GetAsync(id, token);
         }
 
-        public Task<Project> UpdateAsync(Project project, CancellationToken token) => throw new NotImplementedException();
+        public Task<Project> UpdateAsync(Project project, CancellationToken token)
+            => throw new NotImplementedException();
 
         /// <summary>
         ///     Maps from a <see cref="DbDataReader"/> to a <see cref="Project"/>.
@@ -253,5 +291,6 @@ namespace AbleSync.Infrastructure.Repositories
             command.AddParameterWithValue("name", project.Name);
             command.AddParameterWithValue("relative_path", project.RelativePath);
         }
+
     }
 }
