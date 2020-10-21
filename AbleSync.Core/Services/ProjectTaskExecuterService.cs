@@ -22,21 +22,21 @@ namespace AbleSync.Core.Services
     ///     data store, then execute, then sync execution
     ///     outcome (success/failure) with the data store.
     /// </remarks>
-    public class ProjectTaskProcessingService : IProjectTaskExecuterService
+    public class ProjectTaskExecuterService : IProjectTaskExecuterService
     {
         private readonly IProjectRepository _projectRepository;
         private readonly IProjectTaskRepository _projectTaskRepository;
         private readonly IBlobStorageService _blobStorageService;
-        private readonly ILogger<ProjectTaskProcessingService> _logger;
+        private readonly ILogger<ProjectTaskExecuterService> _logger;
         private readonly AbleSyncOptions _options;
 
         /// <summary>
         ///     Create new instance.
         /// </summary>
-        public ProjectTaskProcessingService(IProjectRepository projectRepository,
+        public ProjectTaskExecuterService(IProjectRepository projectRepository,
             IProjectTaskRepository projectTaskRepository,
             IBlobStorageService blobStorageService,
-            ILogger<ProjectTaskProcessingService> logger,
+            ILogger<ProjectTaskExecuterService> logger,
             IOptions<AbleSyncOptions> options)
         {
             _projectRepository = projectRepository ?? throw new ArgumentNullException(nameof(projectRepository));
@@ -67,7 +67,7 @@ namespace AbleSync.Core.Services
                 throw new ArgumentNullException(nameof(token));
             }
 
-            await _projectTaskRepository.CreateAsync(task, token);
+            var taskCreated = await _projectTaskRepository.CreateAsync(task, token);
 
             try
             {
@@ -78,7 +78,7 @@ namespace AbleSync.Core.Services
                     _ => throw new InvalidOperationException(nameof(task.ProjectTaskType)),
                 });
 
-                await _projectTaskRepository.MarkStatusAsync(task.Id, ProjectTaskStatus.Done, token);
+                await _projectTaskRepository.MarkStatusAsync(taskCreated.Id, ProjectTaskStatus.Done, token);
             } 
             catch (AbleSyncBaseException e)
             {

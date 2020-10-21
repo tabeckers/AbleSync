@@ -25,7 +25,7 @@ namespace AbleSync.Core.Extensions
             // Add services.
             services.AddScoped<IProjectScrapingService, ProjectScrapingService>();
             services.AddScoped<IProjectAnalyzingService, ProjectAnalyzingService>();
-            services.AddScoped<IProjectTaskExecuterService, ProjectTaskProcessingService>();
+            services.AddScoped<IProjectTaskExecuterService, ProjectTaskExecuterService>();
             services.AddScoped<IFileTrackingService, FileTrackingService>();
 
             return services;
