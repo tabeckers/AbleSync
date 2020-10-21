@@ -67,6 +67,7 @@ namespace AbleSync.Core.Services
                 // FUTURE Check for changes in audio file. https://github.com/tabeckers/AbleSync/issues/27
                 result.Add(new ProjectTask
                 {
+                    Id = Guid.NewGuid(), // TODO Like this?
                     ProjectId = trackingFile.ProjectId,
                     ProjectTaskType = ProjectTaskType.UploadAudio,
                 });
