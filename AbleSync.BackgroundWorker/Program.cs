@@ -1,16 +1,14 @@
 ﻿using AbleSync.Core;
 using AbleSync.Core.Extensions;
-using AbleSync.Core.Interfaces.Repositories;
-using AbleSync.Core.Interfaces.Services;
+using AbleSync.Core.Host.BackgroundServices;
 using AbleSync.Infrastructure.Extensions;
 using AbleSync.Infrastructure.Provider;
 using AbleSync.Infrastructure.Storage;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using System.IO;
-using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 
 namespace AbleSync.BackgroundWorker
@@ -24,10 +22,28 @@ namespace AbleSync.BackgroundWorker
         ///     Application entry point.
         /// </summary>
         /// <param name="args">Command line arguments.</param>
-        public static async Task Main(string[] args)
-        {
-            var services = new ServiceCollection();
+        public static Task Main(string[] args)
+            => CreateHostBuilder(args).Build().RunAsync();
 
+        /// <summary>
+        ///     Creates the host builder.
+        /// </summary>
+        /// <param name="args">Command line argument.</param>
+        /// <returns>The created host builder</returns>
+        public static IHostBuilder CreateHostBuilder(string[] args) =>
+             Host.CreateDefaultBuilder(args)
+                .ConfigureServices((hostContext, services) =>
+                {
+                    ConfigureServices(services);
+                });
+
+        /// <summary>
+        ///     Configure our service collection.
+        /// </summary>
+        /// <param name="services">The instantiated collection.</param>
+        /// <returns></returns>
+        private static void ConfigureServices(IServiceCollection services)
+        {
             // Add required services.
             services.AddAbleSyncCoreServices();
             services.AddAbleSyncInfrastructureServices();
@@ -60,30 +76,13 @@ namespace AbleSync.BackgroundWorker
                 config.ConnectionStringName = "DatabaseInternal";
             });
 
-            var provider = services.BuildServiceProvider();
+            // Add queue manager as singleton.
+            services.AddSingleton<QueueManager>();
 
-            // Run the scraper.
-            var projectScrapingService = provider.GetRequiredService<IProjectScrapingService>();
-            using var cts = new CancellationTokenSource();
-            await projectScrapingService.ProcessRootDirectoryRecursivelyAsync(cts.Token);
-
-            // Run the project task processor.
-            var projectTaskProcessingService = provider.GetRequiredService<IProjectTaskProcessingService>();
-            var projectRepository = provider.GetRequiredService<IProjectRepository>();
-            var projectTaskRepository = provider.GetRequiredService<IProjectTaskRepository>();
-
-            var projects = await projectRepository.GetAllAsync(cts.Token).ToListAsync(cts.Token);
-            var projectTasks = await projectTaskRepository.GetAllAsync(cts.Token).ToListAsync(cts.Token);
-
-            foreach (var project in projects)
-            {
-                var thisTasks = projectTasks.Where(x => x.ProjectId == project.Id);
-
-                if (thisTasks.Any())
-                {
-                    await projectTaskProcessingService.ProcessProjectTasksAsync(project, thisTasks, cts.Token);
-                }
-            }
+            // Add hosted services.
+            services.AddHostedService<PeriodicScrapingBackgroundService>();
+            services.AddHostedService<PeriodicAnalyzingBackgroundService>();
+            services.AddHostedService<QueueManagerBackgroundService>();
         }
     }
 }
