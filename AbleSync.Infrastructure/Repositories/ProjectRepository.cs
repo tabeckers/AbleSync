@@ -203,7 +203,7 @@ namespace AbleSync.Infrastructure.Repositories
 
             var sql = @"
                 UPDATE  entities.project
-                SET     update_date = now()
+                SET     date_updated = now()
                 WHERE   id = @id";
 
             await using var connection = await _provider.OpenConnectionScopeAsync(token);
