@@ -10,7 +10,7 @@ namespace AbleSync.Core.Entities
         /// <summary>
         ///     Creation time.
         /// </summary>
-        DateTimeOffset? DateCreated { get; set; }
+        DateTimeOffset DateCreated { get; set; }
 
         /// <summary>
         ///     Latest update time.

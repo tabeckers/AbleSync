@@ -1,11 +1,15 @@
 ﻿using AbleSync.Core;
 using AbleSync.Core.Extensions;
+using AbleSync.Core.Interfaces.Repositories;
 using AbleSync.Core.Interfaces.Services;
 using AbleSync.Infrastructure.Extensions;
 using AbleSync.Infrastructure.Provider;
+using AbleSync.Infrastructure.Storage;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -29,7 +33,12 @@ namespace AbleSync.BackgroundWorker
             services.AddAbleSyncInfrastructureServices();
 
             // Setup utility.
-            services.AddLogging();
+            // TODO The config doesn't enfore the level
+            services.AddLogging(options =>
+            {
+                options.AddConsole();
+                options.SetMinimumLevel(LogLevel.Trace);
+            });
 
             // Add configuration.
             // TODO Make environment dependent.
@@ -41,23 +50,40 @@ namespace AbleSync.BackgroundWorker
                 .AddJsonFile("appsettings.development.json", optional: true)
                 .AddEnvironmentVariables()
                 .Build();
-            // TODO Is this correct?
             services.AddScoped<IConfiguration>(_ => configuration);
 
             // Setup actual configuration.
             services.Configure<AbleSyncOptions>(options => configuration.GetSection("AbleSyncOptions").Bind(options));
+            services.Configure<BlobStorageOptions>(options => configuration.GetSection("BlobStorage").Bind(options));
             services.Configure<DbProviderOptions>(config =>
             {
                 config.ConnectionStringName = "DatabaseInternal";
             });
 
-            // Run the service.
-            // TODO This is a work in progress and should be done using a periodic background service.
             var provider = services.BuildServiceProvider();
-            var scraper = provider.GetRequiredService<IProjectScrapingService>();
 
+            // Run the scraper.
+            var projectScrapingService = provider.GetRequiredService<IProjectScrapingService>();
             using var cts = new CancellationTokenSource();
-            await scraper.ProcessRootDirectoryRecursivelyAsync(cts.Token);
+            await projectScrapingService.ProcessRootDirectoryRecursivelyAsync(cts.Token);
+
+            // Run the project task processor.
+            var projectTaskProcessingService = provider.GetRequiredService<IProjectTaskProcessingService>();
+            var projectRepository = provider.GetRequiredService<IProjectRepository>();
+            var projectTaskRepository = provider.GetRequiredService<IProjectTaskRepository>();
+
+            var projects = await projectRepository.GetAllAsync(cts.Token).ToListAsync(cts.Token);
+            var projectTasks = await projectTaskRepository.GetAllAsync(cts.Token).ToListAsync(cts.Token);
+
+            foreach (var project in projects)
+            {
+                var thisTasks = projectTasks.Where(x => x.ProjectId == project.Id);
+
+                if (thisTasks.Any())
+                {
+                    await projectTaskProcessingService.ProcessProjectTasksAsync(project, thisTasks, cts.Token);
+                }
+            }
         }
     }
 }

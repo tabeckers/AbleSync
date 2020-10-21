@@ -27,6 +27,8 @@ namespace AbleSync.Infrastructure.Provider
         static NpgsqlDbProvider()
         {
             NpgsqlConnection.GlobalTypeMapper.MapEnum<ProjectStatus>("entities.project_status");
+            NpgsqlConnection.GlobalTypeMapper.MapEnum<ProjectTaskStatus>("entities.project_task_status");
+            NpgsqlConnection.GlobalTypeMapper.MapEnum<ProjectTaskType>("entities.project_task_type");
         }
 
         /// <summary>

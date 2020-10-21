@@ -8,8 +8,8 @@ using System.Linq;
 
 namespace AbleSync.Core.Helpers
 {
-    // TODO This is Windows specific at the moment.
-    // TODO This should look at file/contenttype instead of extensions.
+    // TODO Too windows specific https://github.com/tabeckers/AbleSync/issues/19
+    // TODO This should look at file/contenttype instead of extensions. https://github.com/tabeckers/AbleSync/issues/33
     /// <summary>
     ///     Helper class for recognizing Ableton project folders.
     /// </summary>

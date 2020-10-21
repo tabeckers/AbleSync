@@ -1,14 +1,16 @@
-﻿using AbleSync.Core.Exceptions;
+﻿using AbleSync.Core.Entities;
+using AbleSync.Core.Exceptions;
+using AbleSync.Core.Helpers;
 using AbleSync.Core.Interfaces.Services;
 using AbleSync.Core.Types;
 using System;
 using System.IO;
 using System.Linq;
 using System.Runtime.Serialization.Formatters.Binary;
+using System.Threading.Tasks;
 
 namespace AbleSync.Core.Services
 {
-    // TODO Custom exceptions.
     /// <summary>
     ///     Service for managing tracking files.
     /// </summary>
@@ -98,17 +100,14 @@ namespace AbleSync.Core.Services
             }
             if (trackingFileCandidates.Count() > 1)
             {
-                throw new InvalidOperationException("Can't have more than one tracking file");
+                throw new MultipleTrackingFilesException();
             }
 
             var trackingFileName = trackingFileCandidates.First();
             var projectId = trackingFileName.Name.Replace(Constants.TrackingFileExtension, "", StringComparison.InvariantCulture);
 
             var path = $"{directoryInfo.FullName}/{projectId}{Constants.TrackingFileExtension}";
-            using var stream = new FileStream(path, FileMode.Open);
-
-            var formatter = new BinaryFormatter();
-            return (TrackingFile)formatter.Deserialize(stream);
+            return FileHelper.GetFile<TrackingFile>(path);
         }
 
         /// <summary>
@@ -132,41 +131,68 @@ namespace AbleSync.Core.Services
             }
             if (trackingFileCandidates.Count() > 1)
             {
-                throw new InvalidOperationException("Can't have more than one tracking file");
+                throw new MultipleTrackingFilesException();
             }
 
             return true;
         }
 
-        // TODO Duplicate code.
         /// <summary>
-        ///     This updates the <see cref="TrackingFile"/> by overwriting it.
+        ///     Marks a tracking file as <see cref="ProjectStatus.Invalid"/>.
         /// </summary>
-        /// <remarks>
-        ///     Currently this simply deletes and re-creates the file.
-        /// </remarks>
-        /// <param name="directoryInfo">The directory.</param>
-        /// <param name="trackingFile">The new tracking file.</param>
-        /// <returns>The written tracking file.</returns>
-        public TrackingFile UpdateTrackingFile(DirectoryInfo directoryInfo, TrackingFile trackingFile)
+        /// <param name="directoryInfo">The directory of the file.</param>
+        /// <returns><see cref="Task"/></returns>
+        public TrackingFile MarkTrackingFileInvalid(DirectoryInfo directoryInfo)
         {
             if (directoryInfo == null)
             {
                 throw new ArgumentNullException(nameof(directoryInfo));
             }
-            if (trackingFile == null)
+
+            var trackingFile = GetTrackingFile(directoryInfo);
+            trackingFile.ProjectStatus = ProjectStatus.Invalid;
+            OverwriteFile(directoryInfo, trackingFile);
+
+            return trackingFile;
+        }
+
+        /// <summary>
+        ///     Updates a <see cref="TrackingFile"/> in a project folder based
+        ///     on the current state of the file and its <see cref="Project"/>.
+        /// </summary>
+        /// <param name="directoryInfo">The respective directory.</param>
+        /// <param name="project">The tracking files project.</param>
+        /// <returns>The updated <see cref="TrackingFile"/>.</returns>
+        public TrackingFile UpdateTrackingFile(DirectoryInfo directoryInfo, Project project)
+        {
+            if (directoryInfo == null)
             {
-                throw new ArgumentNullException(nameof(trackingFile));
+                throw new ArgumentNullException(nameof(directoryInfo));
+            }
+            if (project == null)
+            {
+                throw new ArgumentNullException(nameof(project));
             }
 
-            if (!HasTrackingFile(directoryInfo))
-            {
-                throw new InvalidOperationException("Tracking file did not exist during update call");
-            }
+            var trackingFile = GetTrackingFile(directoryInfo);
+            trackingFile.ProjectStatus = project.ProjectStatus;
+            trackingFile.ProjectDateCreated = project.DateCreated;
+            trackingFile.DateUpdated = project.DateUpdated;
 
+            OverwriteFile(directoryInfo, trackingFile);
+
+            return trackingFile;
+        }
+
+        /// <summary>
+        ///     Deletes and creates a tracking file.
+        /// </summary>
+        /// <param name="directoryInfo">The file directory.</param>
+        /// <param name="trackingFile">The new tracking file.</param>
+        private void OverwriteFile(DirectoryInfo directoryInfo, TrackingFile trackingFile)
+        {
             DeleteTrackingFile(directoryInfo);
             WriteToFile(directoryInfo, trackingFile);
-            return trackingFile;
         }
 
         /// <summary>
@@ -182,5 +208,6 @@ namespace AbleSync.Core.Services
             var formatter = new BinaryFormatter();
             formatter.Serialize(stream, trackingFile);
         }
+
     }
 }

@@ -7,7 +7,7 @@ using AbleSync.Infrastructure.Provider;
 using System;
 using System.Collections.Generic;
 using System.Data.Common;
-using System.Text;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -65,7 +65,7 @@ namespace AbleSync.Infrastructure.Repositories
             await reader.ReadAsync(token);
 
             var id = reader.GetGuid(0);
-            
+
             return await GetAsync(id, token);
         }
 
@@ -110,8 +110,39 @@ namespace AbleSync.Infrastructure.Repositories
             return count == 1;
         }
 
-        // TODO Implement.
-        public Task<IEnumerable<Project>> GetAllAsync(CancellationToken token) => throw new NotImplementedException();
+        // TODO Pagination?
+        /// <summary>
+        ///     Gets all projects from our database.
+        /// </summary>
+        /// <param name="token">The cancellation token.</param>
+        /// <returns>Collection of projects.</returns>
+        public async IAsyncEnumerable<Project> GetAllAsync([EnumeratorCancellation] CancellationToken token)
+        {
+            if (token == null)
+            {
+                throw new ArgumentNullException(nameof(token));
+            }
+
+            var sql = @"
+                SELECT  id,
+                        name,
+                        artist_id,
+                        relative_path,
+                        date_created,
+                        date_updated,
+                        project_status
+                FROM    entities.project";
+
+            await using var connection = await _provider.OpenConnectionScopeAsync(token);
+            await using var command = _provider.CreateCommand(sql, connection);
+
+            await using var reader = await command.ExecuteReaderAsyncEnsureRowAsync();
+            
+            while (await reader.ReadAsync(token))
+            {
+                yield return MapFromReader(reader);
+            }
+        }
 
         /// <summary>
         ///     Gets a single <see cref="Project"/> from our database.
@@ -144,7 +175,7 @@ namespace AbleSync.Infrastructure.Repositories
 
             await using var connection = await _provider.OpenConnectionScopeAsync(token);
             await using var command = _provider.CreateCommand(sql, connection);
-            
+
             command.AddParameterWithValue("id", id);
 
             await using var reader = await command.ExecuteReaderAsyncEnsureRowAsync();

@@ -41,7 +41,7 @@ namespace AbleSync.Core.Interfaces.Repositories
         /// </summary>
         /// <param name="token">The cancellation token.</param>
         /// <returns>Collection of <see cref="Project"/>s.</returns>
-        Task<IEnumerable<Project>> GetAllAsync(CancellationToken token);
+        IAsyncEnumerable<Project> GetAllAsync(CancellationToken token);
 
         /// <summary>
         ///     Gets a <see cref="Project"/> from our data store.
