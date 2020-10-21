@@ -31,7 +31,7 @@ namespace AbleSync.Core.Services
             _fileTrackingService = fileTrackingService ?? throw new ArgumentNullException(nameof(fileTrackingService));
         }
 
-        // TODO Make IAsyncEnumerable
+        // FUTURE Make IAsyncEnumerable
         /// <summary>
         ///     Analyzes a project and determines which <see cref="ProjectTask"/>
         ///     entities will have to be executed for said project.
@@ -59,7 +59,7 @@ namespace AbleSync.Core.Services
 
             var existingTasks = await _projectTaskRepository.GetAllForProjectAsync(trackingFile.ProjectId, token).ToListAsync(token);
 
-            // TODO Check for changes in audio file.
+            // TODO Check for changes in audio file. https://github.com/tabeckers/AbleSync/issues/27
 
             // If we don't have a sync audio task, create one. If we already have
             // one, the background worker will simply sync the latest audio file.

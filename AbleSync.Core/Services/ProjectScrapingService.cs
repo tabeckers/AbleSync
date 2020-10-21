@@ -36,13 +36,7 @@ namespace AbleSync.Core.Services
             _projectAnalyzingService = projectAnalyzingService ?? throw new ArgumentNullException(nameof(projectAnalyzingService));
             _projectRepository = projectRepository ?? throw new ArgumentNullException(nameof(projectRepository));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-
-            // TODO Clean up syntax.
-            if (options == null || options.Value == null)
-            {
-                throw new ArgumentNullException(nameof(options));
-            }
-            _options = options.Value;
+            _options = options?.Value ?? throw new ArgumentNullException(nameof(options));
         }
 
         /// <summary>
@@ -159,7 +153,6 @@ namespace AbleSync.Core.Services
                 {
                     // If no tracking file exists we can only assume that the project is 
                     // not yet being tracked. This will start tracking the project.
-                    // TODO Move this to some helper class.
                     var extractedProject = ProjectFolderHelper.ExtractProject(directoryInfo);
 
                     // TODO This should not happen here.

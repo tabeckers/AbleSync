@@ -13,7 +13,7 @@ namespace AbleSync.Core.Interfaces.Services
     public interface IProjectAnalyzingService
     {
         // TODO Do we really need to return the result?
-        // TODO Do we really need the entire project, isn't the id enough?
+        // TODO Do we really need the entire project, isn't the id enough? https://github.com/tabeckers/AbleSync/issues/34
         /// <summary>
         ///     Analyzes a project and determines which <see cref="ProjectTask"/>
         ///     entities will have to be executed for said project.

@@ -96,14 +96,14 @@ namespace AbleSync.Core.Services
                 throw new InvalidOperationException("All tasks should belong to the same project.");
             }
 
-            // TODO AsyncEnumerable
+            // FUTURE AsyncEnumerable
             foreach (var task in tasks)
             {
                 await ProcessProjectTaskAsync(project, task, token);
             }
         }
 
-        // TODO Make this into a separate service.
+        // TODO Make this into a separate service, https://github.com/tabeckers/AbleSync/issues/29
         // TODO Task isnt used?
         /// <summary>
         ///     Execute the upload for an audio file.
@@ -113,7 +113,7 @@ namespace AbleSync.Core.Services
         /// <param name="token">The cancellation token.</param>
         private async Task ExecuteUploadAudioAsync(Project project, ProjectTask task, CancellationToken token)
         {
-            // TODO Beun
+            // TODO Beun, see https://github.com/tabeckers/AbleSync/issues/19
             var parsedPath = project.RelativePath.Replace("\\", "/", StringComparison.InvariantCulture);
             var path = $"{_options.RootDirectoryPath.AbsolutePath}/{parsedPath}";
             path = path.Replace("%20", " ", StringComparison.InvariantCulture);
@@ -146,7 +146,7 @@ namespace AbleSync.Core.Services
             }
 
             // This has the extension in it as well.
-            // TODO This is windows coupled. See #19 and #28.
+            // TODO This is windows coupled. See https://github.com/tabeckers/AbleSync/issues/19 and https://github.com/tabeckers/AbleSync/issues/28
             var fileName = $"{audioFile.Name}";
             var directoryName = $"{Constants.StorageProjectFolderBase}/{project.Id}/{project.Name}.";
             var fullFileName = $"{path}/{audioFile.Name}";
@@ -154,7 +154,7 @@ namespace AbleSync.Core.Services
             using var fileStream = new FileStream(fullFileName, FileMode.Open, FileAccess.Read);
             await _blobStorageService.StoreFileAsync(directoryName, fileName, contentType, fileStream, token);
 
-            // TODO Here?
+            // TODO Here? https://github.com/tabeckers/AbleSync/issues/31
             _logger.LogTrace($"Processed task {task.Id} {task.ProjectTaskType} - uploaded {fileName} to blob storage"); 
         }
 

@@ -6,7 +6,7 @@ using System.Runtime.Serialization.Formatters.Binary;
 
 namespace AbleSync.Core.Helpers
 {
-    // TODO Windows specific.
+    // TODO Windows specific, https://github.com/tabeckers/AbleSync/issues/19
     /// <summary>
     ///     Contains helper functionality for files.
     /// </summary>
