@@ -9,15 +9,10 @@ namespace AbleSync.Core.Host.BackgroundServices
 {
     // TODO Move to different project?
     /// <summary>
-    ///     Hosted service for periodically scraping the
-    ///     configured root directory.
+    ///     Hosted service for periodically scraping the configured root directory.
     /// </summary>
     /// <remarks>
-    ///     TODO Is this correct?
-    ///     The <see cref="IProjectScrapingService"/> will perform
-    ///     both asynchronous operations (project syncing) and IO
-    ///     work, meaning sysnchronous operations. Hence this is run
-    ///     in it's own thread.
+    ///     Logging is handled by the base class.
     /// </remarks>
     public sealed class PeriodicScrapingBackgroundService : PeriodicBackgroundService<PeriodicScrapingBackgroundService>
     {

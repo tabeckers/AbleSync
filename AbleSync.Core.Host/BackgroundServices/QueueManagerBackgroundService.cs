@@ -65,7 +65,7 @@ namespace AbleSync.Core.Host.BackgroundServices
                 // TODO Find different solution. Store internally?
                 var token = (CancellationToken)state;
 
-                // TODO Race condition?
+                // TODO Race condition? Use DequeueOrNull?
                 if (_queueManager.GetCount() == 0)
                 {
                     return;
@@ -76,11 +76,9 @@ namespace AbleSync.Core.Host.BackgroundServices
 
                 var item = _queueManager.Dequeue();
 
-                _logger.LogInformation($"Dequeued item {item.Id}");
+                _logger.LogTrace($"Dequeued item {item.Id}");
 
                 await projectTaskExecuterService.ProcessProjectTaskAsync(item, token);
-
-                _logger.LogInformation($"Processed item {item.Id}");
             }
             catch (Exception e)
             {
