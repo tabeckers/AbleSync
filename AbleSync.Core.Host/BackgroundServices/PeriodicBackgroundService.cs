@@ -29,7 +29,8 @@ namespace AbleSync.Core.Host.BackgroundServices
         /// <summary>
         ///     Create new instance.
         /// </summary>
-        public PeriodicBackgroundService(ILogger<TServiceType> logger) => _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        public PeriodicBackgroundService(ILogger<TServiceType> logger) 
+            => _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
         /// <summary>
         ///     Start the service and trigger periodic execution

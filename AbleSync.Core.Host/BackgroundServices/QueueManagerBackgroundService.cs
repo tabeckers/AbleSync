@@ -76,7 +76,7 @@ namespace AbleSync.Core.Host.BackgroundServices
 
                 var item = _queueManager.Dequeue();
 
-                _logger.LogTrace($"Dequeued item {item.Id}");
+                _logger.LogTrace($"Passing item {item.Id} to project task executer service");
 
                 await projectTaskExecuterService.ProcessProjectTaskAsync(item, token);
             }

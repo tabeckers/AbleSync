@@ -68,6 +68,12 @@ namespace AbleSync.Core.Managers
         /// </summary>
         /// <returns>The dequeued item.</returns>
         public ProjectTask Dequeue()
-            => Queue.Dequeue();
+        { 
+            var item = Queue.Dequeue();
+
+            _logger.LogTrace($"Dequeued task {item.Id}");
+
+            return item;
+        }
     }
 }
