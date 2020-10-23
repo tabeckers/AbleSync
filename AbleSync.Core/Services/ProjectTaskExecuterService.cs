@@ -65,8 +65,8 @@ namespace AbleSync.Core.Services
 
             _logger.LogInformation($"Starting project task {task.Id} of type {task.ProjectTaskType}");
 
-            // This should be transactional --> scope?
-            var taskCreated = await _projectTaskRepository.CreateAsync(task, token);
+            // TODO This should be transactional --> scope?
+            var taskCreatedId = await _projectTaskRepository.CreateAsync(task, token);
 
             try
             {
@@ -77,7 +77,7 @@ namespace AbleSync.Core.Services
                     _ => throw new InvalidOperationException(nameof(task.ProjectTaskType)),
                 });
 
-                await _projectTaskRepository.MarkStatusAsync(taskCreated.Id, ProjectTaskStatus.Done, token);
+                await _projectTaskRepository.MarkStatusAsync(taskCreatedId, ProjectTaskStatus.Done, token);
 
                 _logger.LogInformation($"Finished project task {task.Id} of type {task.ProjectTaskType}");
             }
