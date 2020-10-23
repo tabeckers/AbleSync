@@ -11,6 +11,7 @@ namespace AbleSync.Core.Host.BackgroundServices
     /// </summary>
     public class QueueManager
     {
+        // TODO Make configurable
         private const uint MaxQueueSize = 2;
 
         private readonly Queue<ProjectTask> Queue = new Queue<ProjectTask>((int)MaxQueueSize);
