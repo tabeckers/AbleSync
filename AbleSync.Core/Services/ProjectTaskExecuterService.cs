@@ -5,13 +5,11 @@ using AbleSync.Core.Interfaces.Services;
 using AbleSync.Core.ProjectTaskExecuters;
 using AbleSync.Core.Types;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Transactions;
 
 namespace AbleSync.Core.Services
 {
@@ -63,8 +61,6 @@ namespace AbleSync.Core.Services
                 throw new ArgumentNullException(nameof(token));
             }
 
-            _logger.LogInformation($"Starting project task {task.Id} of type {task.ProjectTaskType}");
-
             // TODO This should be transactional --> scope?
             var taskCreatedId = await _projectTaskRepository.CreateAsync(task, token);
 
@@ -79,7 +75,7 @@ namespace AbleSync.Core.Services
 
                 await _projectTaskRepository.MarkStatusAsync(taskCreatedId, ProjectTaskStatus.Done, token);
 
-                _logger.LogInformation($"Finished project task {task.Id} of type {task.ProjectTaskType}");
+                _logger.LogTrace($"Executed project task {task.Id} of type {task.ProjectTaskType}");
             }
             catch (AbleSyncBaseException e)
             {

@@ -1,27 +1,39 @@
 ﻿using AbleSync.Core.Entities;
-using AbleSync.Core.Host.Exceptions;
+using AbleSync.Core.Exceptions;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;
 
-namespace AbleSync.Core.Host.BackgroundServices
+namespace AbleSync.Core.Managers
 {
     /// <summary>
     ///    Wrapper around a queue for project tasks.
     /// </summary>
     public class QueueManager
     {
-        // TODO Make configurable
-        private const uint MaxQueueSize = 2;
+        private readonly uint MaxQueueSize;
 
-        private readonly Queue<ProjectTask> Queue = new Queue<ProjectTask>((int)MaxQueueSize);
+        private readonly Queue<ProjectTask> Queue;
         private readonly ILogger<QueueManager> _logger;
 
         /// <summary>
         ///     Create new instance.
         /// </summary>
-        public QueueManager(ILogger<QueueManager> logger)
-            => _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        public QueueManager(IOptions<AbleSyncOptions> options,
+            ILogger<QueueManager> logger)
+        {
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+
+            MaxQueueSize = options?.Value.TaskExecutionQueueSize ?? throw new ArgumentNullException(nameof(options));
+            if (MaxQueueSize == 0 || MaxQueueSize >= int.MaxValue)
+            {
+                throw new ArgumentOutOfRangeException($"{nameof(options.Value.TaskExecutionQueueSize)}"); // TODO Warning workaround
+            }
+
+            // Initialize the queue with correct size dynamically.
+            Queue = new Queue<ProjectTask>((int)MaxQueueSize);
+        }
 
         /// <summary>
         ///     Enqueue an item to be executed by our framework.
@@ -29,6 +41,11 @@ namespace AbleSync.Core.Host.BackgroundServices
         /// <param name="projectTask">The task to be executed.</param>
         public void Enqueue(ProjectTask projectTask)
         {
+            if (projectTask == null)
+            {
+                throw new ArgumentNullException(nameof(projectTask));
+            }
+
             if (Queue.Count > MaxQueueSize)
             {
                 throw new QueueFullException();
@@ -51,6 +68,12 @@ namespace AbleSync.Core.Host.BackgroundServices
         /// </summary>
         /// <returns>The dequeued item.</returns>
         public ProjectTask Dequeue()
-            => Queue.Dequeue();
+        { 
+            var item = Queue.Dequeue();
+
+            _logger.LogTrace($"Dequeued task {item.Id}");
+
+            return item;
+        }
     }
 }

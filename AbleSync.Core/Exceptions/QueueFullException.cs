@@ -2,7 +2,7 @@
 using System;
 using System.Runtime.Serialization;
 
-namespace AbleSync.Core.Host.Exceptions
+namespace AbleSync.Core.Exceptions
 {
     /// <summary>
     ///     Indicates a full queue.

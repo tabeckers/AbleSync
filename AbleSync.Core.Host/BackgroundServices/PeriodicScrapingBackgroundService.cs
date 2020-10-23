@@ -1,5 +1,7 @@
 ﻿using AbleSync.Core.Interfaces.Services;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using System;
 using System.Threading;
 
@@ -7,27 +9,28 @@ namespace AbleSync.Core.Host.BackgroundServices
 {
     // TODO Move to different project?
     /// <summary>
-    ///     Hosted service for periodically scraping the
-    ///     configured root directory.
+    ///     Hosted service for periodically scraping the configured root directory.
     /// </summary>
     /// <remarks>
-    ///     TODO Is this correct?
-    ///     The <see cref="IProjectScrapingService"/> will perform
-    ///     both asynchronous operations (project syncing) and IO
-    ///     work, meaning sysnchronous operations. Hence this is run
-    ///     in it's own thread.
+    ///     Logging is handled by the base class.
     /// </remarks>
     public sealed class PeriodicScrapingBackgroundService : PeriodicBackgroundService<PeriodicScrapingBackgroundService>
     {
-        private readonly IProjectScrapingService _projectScrapingService;
+        private readonly IServiceProvider _provider;
 
         /// <summary>
         ///     Create new instance.
         /// </summary>
-        public PeriodicScrapingBackgroundService(IProjectScrapingService projectScrapingService,
+        public PeriodicScrapingBackgroundService(IServiceProvider provider,
+            IOptions<AbleSyncOptions> options,
             ILogger<PeriodicScrapingBackgroundService> logger)
-            : base(TimeSpan.FromSeconds(20), logger)
-            => _projectScrapingService = projectScrapingService ?? throw new ArgumentNullException(nameof(projectScrapingService));
+            : base(logger)
+        {
+            _provider = provider ?? throw new ArgumentNullException(nameof(provider));
+
+            var interval = options?.Value?.IntervalAnalyzingMinutes ?? throw new ArgumentNullException(nameof(options));
+            SetInterval(TimeSpan.FromMinutes(interval));
+        }
 
         // TODO Async voids are dangerous.
         /// <summary>
@@ -38,7 +41,10 @@ namespace AbleSync.Core.Host.BackgroundServices
         {
             try
             {
-                await _projectScrapingService.ProcessRootDirectoryRecursivelyAsync(token);
+                using var scope = _provider.CreateScope();
+
+                var service = scope.ServiceProvider.GetService<IProjectScrapingService>();
+                await service.ProcessRootDirectoryRecursivelyAsync(token);
             }
             catch (Exception e)
             {

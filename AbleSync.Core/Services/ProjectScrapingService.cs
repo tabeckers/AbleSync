@@ -131,7 +131,7 @@ namespace AbleSync.Core.Services
                     var trackingFile = _fileTrackingService.GetTrackingFile(directoryInfo);
                     if (trackingFile.ProjectStatus == ProjectStatus.Invalid)
                     {
-                        _logger.LogInformation($"Project with id {trackingFile.ProjectId} marked as invalid, skipping");
+                        _logger.LogWarning($"Project with id {trackingFile.ProjectId} marked as invalid, skipping");
                         return;
                     }
 

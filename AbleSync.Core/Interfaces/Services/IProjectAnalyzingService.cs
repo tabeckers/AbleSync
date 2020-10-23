@@ -1,6 +1,5 @@
 ﻿using AbleSync.Core.Entities;
 using System;
-using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -15,14 +14,19 @@ namespace AbleSync.Core.Interfaces.Services
     /// </remarks>
     public interface IProjectAnalyzingService
     {
-        // FUTURE Make IAsyncEnumerable
         /// <summary>
         ///     Analyze a project and determine all project tasks that have
-        ///     to be executed for it.
+        ///     to be executed for it. All tasks are then enqueued.
         /// </summary>
         /// <param name="projectId">The project to analyze.</param>
         /// <param name="token">The cancellation token.</param>
-        /// <returns>All project tasks that should be executed.</returns>
-        public Task<IEnumerable<ProjectTask>> AnalyzeProjectAsync(Guid projectId, CancellationToken token);
+        public Task AnalyzeProjectEnqueueTasksAsync(Guid projectId, CancellationToken token);
+
+        /// <summary>
+        ///     Analyze all projects and determine all project tasks that
+        ///     have to be executed for them. All tasks are then enqueued.
+        /// </summary>
+        /// <param name="token">The cancellation token.</param>
+        public Task AnalyzeAllProjectsEnqueueTasksAsync(CancellationToken token);
     }
 }

@@ -1,5 +1,6 @@
-﻿using AbleSync.Core.Entities;
-using AbleSync.Core.Interfaces.Services;
+﻿using AbleSync.Core.Interfaces.Services;
+using AbleSync.Core.Managers;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using System;
@@ -9,6 +10,7 @@ using System.Threading.Tasks;
 namespace AbleSync.Core.Host.BackgroundServices
 {
     // TODO Is this correct use of DI?
+    // TODO This should be event based, not polling.
     /// <summary>
     ///     Wrapper to launch <see cref="QueueManager"/> so 
     ///     it can be accessed through the DI.
@@ -18,18 +20,18 @@ namespace AbleSync.Core.Host.BackgroundServices
         private Timer _timer;
 
         private readonly QueueManager _queueManager;
-        private readonly IProjectTaskExecuterService _projectTaskExecuterService;
+        private readonly IServiceProvider _provider;
         private readonly ILogger<QueueManagerBackgroundService> _logger;
 
         /// <summary>
         ///     Create new instance.
         /// </summary>
         public QueueManagerBackgroundService(QueueManager queueManager,
-            IProjectTaskExecuterService projectTaskExecuterService,
+            IServiceProvider provider,
             ILogger<QueueManagerBackgroundService> logger)
         {
             _queueManager = queueManager ?? throw new ArgumentNullException(nameof(queueManager));
-            _projectTaskExecuterService = projectTaskExecuterService ?? throw new ArgumentNullException(nameof(projectTaskExecuterService));
+            _provider = provider ?? throw new ArgumentNullException(nameof(provider));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
@@ -63,19 +65,20 @@ namespace AbleSync.Core.Host.BackgroundServices
                 // TODO Find different solution. Store internally?
                 var token = (CancellationToken)state;
 
-                // TODO Race condition?
+                // TODO Race condition? Use DequeueOrNull?
                 if (_queueManager.GetCount() == 0)
                 {
                     return;
                 }
 
+                using var scope = _provider.CreateScope();
+                var projectTaskExecuterService = scope.ServiceProvider.GetService<IProjectTaskExecuterService>();
+
                 var item = _queueManager.Dequeue();
 
-                _logger.LogInformation($"Dequeued item {item.Id}");
+                _logger.LogTrace($"Passing item {item.Id} to project task executer service");
 
-                await _projectTaskExecuterService.ProcessProjectTaskAsync(item, token);
-
-                _logger.LogInformation($"Processed item {item.Id}");
+                await projectTaskExecuterService.ProcessProjectTaskAsync(item, token);
             }
             catch (Exception e)
             {
