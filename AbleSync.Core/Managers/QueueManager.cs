@@ -1,11 +1,11 @@
 ﻿using AbleSync.Core.Entities;
-using AbleSync.Core.Host.Exceptions;
+using AbleSync.Core.Exceptions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;
 
-namespace AbleSync.Core.Host.BackgroundServices
+namespace AbleSync.Core.Managers
 {
     /// <summary>
     ///    Wrapper around a queue for project tasks.
@@ -28,7 +28,7 @@ namespace AbleSync.Core.Host.BackgroundServices
             MaxQueueSize = options?.Value.TaskExecutionQueueSize ?? throw new ArgumentNullException(nameof(options));
             if (MaxQueueSize == 0 || MaxQueueSize >= int.MaxValue)
             {
-                throw new ArgumentOutOfRangeException(nameof(options.Value.TaskExecutionQueueSize));
+                throw new ArgumentOutOfRangeException($"{nameof(options.Value.TaskExecutionQueueSize)}"); // TODO Warning workaround
             }
 
             // Initialize the queue with correct size dynamically.
@@ -41,6 +41,11 @@ namespace AbleSync.Core.Host.BackgroundServices
         /// <param name="projectTask">The task to be executed.</param>
         public void Enqueue(ProjectTask projectTask)
         {
+            if (projectTask == null)
+            {
+                throw new ArgumentNullException(nameof(projectTask));
+            }
+
             if (Queue.Count > MaxQueueSize)
             {
                 throw new QueueFullException();
