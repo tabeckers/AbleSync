@@ -7,6 +7,7 @@ using System.Threading;
 
 namespace AbleSync.Core.Host.BackgroundServices
 {
+    // TODO Can we generalize this as well? Along with PeriodicScrapingBackgroundService?
     // TODO Move to different project?
     /// <summary>
     ///     Periodically calls the <see cref="IProjectAnalyzingService"/>.
