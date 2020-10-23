@@ -8,7 +8,9 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using System;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace AbleSync.BackgroundWorker
@@ -34,12 +36,10 @@ namespace AbleSync.BackgroundWorker
              Host.CreateDefaultBuilder(args)
                 .ConfigureAppConfiguration((hostContext, config) =>
                 {
-                    // FUTURE Still suboptimal. Add cmd args? Conventions?
-#if DEBUG
-                    var basePath = @"C:\Users\thoma\Programming\Self\AbleSync\AbleSync.BackgroundWorker";
-#else
                     var basePath = Directory.GetCurrentDirectory();
-#endif
+
+                    // If we specified a config location, use that.
+                    basePath = GetValueOrNull(args, "--configdir") ?? basePath;
 
                     config.SetBasePath(basePath);
                     config.AddJsonFile("appsettings.json", optional: true);
@@ -50,27 +50,28 @@ namespace AbleSync.BackgroundWorker
                 .ConfigureLogging((hostContext, config) =>
                 {
                     config.AddConsole();
-                    config.SetMinimumLevel(LogLevel.Trace); // TODO From appsettings
+                    //config.SetMinimumLevel(LogLevel.Trace); // TODO From appsettings
                 })
                 .ConfigureServices((hostContext, services) =>
                 {
-                    ConfigureServices(services);
+                    ConfigureServices(services, hostContext.Configuration);
                 });
 
         /// <summary>
         ///     Configure our service collection.
         /// </summary>
         /// <param name="services">The instantiated collection.</param>
+        /// <param name="configuration">The configuration collection.</param>
         /// <returns></returns>
-        private static void ConfigureServices(IServiceCollection services)
+        private static void ConfigureServices(IServiceCollection services, IConfiguration configuration)
         {
             // Add required services.
             services.AddAbleSyncCoreServices();
             services.AddAbleSyncInfrastructureServices();
 
+            services.AddOptions();
+
             // Setup actual configuration.
-            // TODO This is incorrect I think.
-            var configuration = services.BuildServiceProvider().GetRequiredService<IConfiguration>();
             services.Configure<AbleSyncOptions>(options => configuration.GetSection("AbleSyncOptions").Bind(options));
             services.Configure<BlobStorageOptions>(options => configuration.GetSection("BlobStorage").Bind(options));
             services.Configure<DbProviderOptions>(config =>
@@ -85,6 +86,39 @@ namespace AbleSync.BackgroundWorker
             services.AddHostedService<PeriodicScrapingBackgroundService>();
             services.AddHostedService<PeriodicAnalyzingBackgroundService>();
             services.AddHostedService<QueueManagerBackgroundService>();
+        }
+
+        /// <summary>
+        ///     Attempts to extract a value from the command line args. If the
+        ///     requested value isn't present this returns null.
+        /// </summary>
+        /// <remarks>
+        ///     <para>
+        ///         The dashes are expected to be present in <paramref name="key"/>.
+        ///     </para>
+        ///     <para>
+        ///         This does not consider invalid command line arguments, for
+        ///         example when the --key is specified without the value. The
+        ///         application will crash on startup if this is the case.
+        ///     </para>
+        /// </remarks>
+        /// <param name="args">Command line args.</param>
+        /// <param name="key">The key to get.</param>
+        /// <returns>The value or null if it isn't present.</returns>
+        private static string GetValueOrNull(string[] args, string key)
+        {
+            if (args.Length == 0)
+            {
+                return null;
+            }
+
+            if (args.Where(x => x.Equals(key)).Any())
+            {
+                var keyIndex = Array.IndexOf(args, key);
+                return args[keyIndex + 1];
+            }
+
+            return null;
         }
     }
 }
