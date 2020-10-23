@@ -5,7 +5,7 @@ using System.Threading;
 
 namespace AbleSync.Core.Host.BackgroundServices
 {
-    // TODO Make timed hosted service abstract class?
+    // TODO Move to different project?
     /// <summary>
     ///     Hosted service for periodically scraping the
     ///     configured root directory.
@@ -19,9 +19,7 @@ namespace AbleSync.Core.Host.BackgroundServices
     /// </remarks>
     public sealed class PeriodicScrapingBackgroundService : PeriodicBackgroundService<PeriodicScrapingBackgroundService>
     {
-        private readonly Timer _timer;
         private readonly IProjectScrapingService _projectScrapingService;
-        private readonly ILogger<PeriodicScrapingBackgroundService> _logger;
 
         /// <summary>
         ///     Create new instance.
@@ -29,10 +27,7 @@ namespace AbleSync.Core.Host.BackgroundServices
         public PeriodicScrapingBackgroundService(IProjectScrapingService projectScrapingService,
             ILogger<PeriodicScrapingBackgroundService> logger)
             : base(TimeSpan.FromSeconds(20), logger)
-        {
-            _projectScrapingService = projectScrapingService ?? throw new ArgumentNullException(nameof(projectScrapingService));
-            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        }
+            => _projectScrapingService = projectScrapingService ?? throw new ArgumentNullException(nameof(projectScrapingService));
 
         // TODO Async voids are dangerous.
         /// <summary>

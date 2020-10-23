@@ -8,6 +8,7 @@ using System.Threading;
 
 namespace AbleSync.Core.Host.BackgroundServices
 {
+    // TODO Move to different project?
     /// <summary>
     ///     Periodically calls the <see cref="IProjectAnalyzingService"/>.
     /// </summary>
