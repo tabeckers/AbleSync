@@ -33,5 +33,9 @@ namespace AbleSync.Core.Entities
         /// </summary>
         public DateTimeOffset? DateUpdated { get; set; }
 
+        /// <summary>
+        ///     Latest sync time.
+        /// </summary>
+        public DateTimeOffset DateSynced { get; set; }
     }
 }
