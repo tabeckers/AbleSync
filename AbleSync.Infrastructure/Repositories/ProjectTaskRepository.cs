@@ -16,7 +16,7 @@ namespace AbleSync.Infrastructure.Repositories
     /// <summary>
     ///     Repository for <see cref="ProjectTask"/> entities.
     /// </summary>
-    internal sealed class ProjectTaskRepository : RepositoryBase, IProjectTaskRepository
+    internal sealed class ProjectTaskRepository : RepositoryBase<ProjectTask>, IProjectTaskRepository
     {
         /// <summary>
         ///     Create new instance.
@@ -32,7 +32,7 @@ namespace AbleSync.Infrastructure.Repositories
         /// <param name="projectTask">See <see cref="Project"/>.</param>
         /// <param name="token">The cancellation token.</param>
         /// <returns>The created <see cref="ProjectTask"/>.</returns>
-        public async Task<ProjectTask> CreateAsync(ProjectTask projectTask, CancellationToken token)
+        public override async Task<Guid> CreateAsync(ProjectTask projectTask, CancellationToken token)
         {
             if (projectTask == null)
             {
@@ -66,10 +66,12 @@ namespace AbleSync.Infrastructure.Repositories
             await using var reader = await command.ExecuteReaderAsyncEnsureRowAsync();
             await reader.ReadAsync(token);
 
-            var id = reader.GetGuid(0);
-
-            return await GetAsync(id, token);
+            return reader.GetGuid(0);
         }
+
+        public override Task DeleteAsync(Guid id, CancellationToken token) => throw new NotImplementedException();
+
+        public override Task<bool> ExistsAsync(Guid id, CancellationToken token) => throw new NotImplementedException();
 
         // TODO Make async enumerable?
         /// <summary>
@@ -120,7 +122,7 @@ namespace AbleSync.Infrastructure.Repositories
         /// <param name="id">Internal project id.</param>
         /// <param name="token">The cancellation token.</param>
         /// <returns>The returned <see cref="ProjectTask"/>.</returns>
-        public async Task<ProjectTask> GetAsync(Guid id, CancellationToken token)
+        public override async Task<ProjectTask> GetAsync(Guid id, CancellationToken token)
         {
             if (id == null || id == Guid.Empty)
             {
@@ -195,29 +197,11 @@ namespace AbleSync.Infrastructure.Repositories
         }
 
         /// <summary>
-        ///     Maps from a <see cref="DbDataReader"/> to a <see cref="ProjectTask"/>.
-        /// </summary>
-        /// <param name="reader">The reader to map from.</param>
-        /// <returns>The mapped project.</returns>
-        private static ProjectTask MapFromReader(DbDataReader reader)
-           => new ProjectTask
-           {
-               Id = reader.GetGuid(0),
-               ProjectId = reader.GetGuid(1),
-               DateCreated = reader.GetDateTime(2),
-               DateUpdated = reader.GetSafeDateTime(3),
-               DateCompleted = reader.GetSafeDateTime(4),
-               ProjectTaskStatus = reader.GetFieldValue<ProjectTaskStatus>(5),
-               ProjectTaskType = reader.GetFieldValue<ProjectTaskType>(6),
-               TaskParameter = reader.GetSafeString(7),
-           };
-
-        /// <summary>
         ///     Gets all project tasks from our database.
         /// </summary>
         /// <param name="token">The cancellation token.</param>
         /// <returns>Collection of project tasks.</returns>
-        public async IAsyncEnumerable<ProjectTask> GetAllAsync([EnumeratorCancellation] CancellationToken token)
+        public override async IAsyncEnumerable<ProjectTask> GetAllAsync([EnumeratorCancellation] CancellationToken token)
         {
             if (token == null)
             {
@@ -245,5 +229,26 @@ namespace AbleSync.Infrastructure.Repositories
                 yield return MapFromReader(reader);
             }
         }
+
+        public override Task UpdateAsync(ProjectTask entity, CancellationToken token) => throw new NotImplementedException();
+
+        /// <summary>
+        ///     Maps from a <see cref="DbDataReader"/> to a <see cref="ProjectTask"/>.
+        /// </summary>
+        /// <param name="reader">The reader to map from.</param>
+        /// <returns>The mapped project.</returns>
+        private static ProjectTask MapFromReader(DbDataReader reader)
+           => new ProjectTask
+           {
+               Id = reader.GetGuid(0),
+               ProjectId = reader.GetGuid(1),
+               DateCreated = reader.GetDateTime(2),
+               DateUpdated = reader.GetSafeDateTime(3),
+               DateCompleted = reader.GetSafeDateTime(4),
+               ProjectTaskStatus = reader.GetFieldValue<ProjectTaskStatus>(5),
+               ProjectTaskType = reader.GetFieldValue<ProjectTaskType>(6),
+               TaskParameter = reader.GetSafeString(7),
+           };
+
     }
 }

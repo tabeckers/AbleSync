@@ -17,7 +17,7 @@ namespace AbleSync.Infrastructure.Repositories
     /// <summary>
     ///     Repository for <see cref="Project"/> entities.
     /// </summary>
-    internal sealed class ProjectRepository : RepositoryBase, IProjectRepository
+    internal sealed class ProjectRepository : RepositoryBase<Project>, IProjectRepository
     {
         /// <summary>
         ///     Create new instance.
@@ -33,7 +33,7 @@ namespace AbleSync.Infrastructure.Repositories
         /// <param name="project">The project to create.</param>
         /// <param name="token">The cancellation token.</param>
         /// <returns>The created project with id assigned.</returns>
-        public async Task<Project> CreateAsync(Project project, CancellationToken token)
+        public override async Task<Guid> CreateAsync(Project project, CancellationToken token)
         {
             if (project == null)
             {
@@ -65,13 +65,11 @@ namespace AbleSync.Infrastructure.Repositories
             await using var reader = await command.ExecuteReaderAsyncEnsureRowAsync();
             await reader.ReadAsync(token);
 
-            var id = reader.GetGuid(0);
-
-            return await GetAsync(id, token);
+            return reader.GetGuid(0);
         }
 
         // TODO Implement. Do we even want this functionality?
-        public Task DeleteAsync(Guid id, CancellationToken token) => throw new NotImplementedException();
+        public override Task DeleteAsync(Guid id, CancellationToken token) => throw new NotImplementedException();
 
         /// <summary>
         ///     Checks if a <see cref="Project"/> by a given <paramref name="id"/>
@@ -80,7 +78,7 @@ namespace AbleSync.Infrastructure.Repositories
         /// <param name="id">The id to search for.</param>
         /// <param name="token">Cancellation token.</param>
         /// <returns><c>true</c> if the project exists.</returns>
-        public async Task<bool> ExistsAsync(Guid id, CancellationToken token)
+        public override async Task<bool> ExistsAsync(Guid id, CancellationToken token)
         {
             if (id == null || id == Guid.Empty)
             {
@@ -117,7 +115,7 @@ namespace AbleSync.Infrastructure.Repositories
         /// </summary>
         /// <param name="token">The cancellation token.</param>
         /// <returns>Collection of projects.</returns>
-        public async IAsyncEnumerable<Project> GetAllAsync([EnumeratorCancellation] CancellationToken token)
+        public override async IAsyncEnumerable<Project> GetAllAsync([EnumeratorCancellation] CancellationToken token)
         {
             if (token == null)
             {
@@ -151,7 +149,7 @@ namespace AbleSync.Infrastructure.Repositories
         /// <param name="id">Internal project id.</param>
         /// <param name="token">Cancellation token.</param>
         /// <returns>The returned project.</returns>
-        public async Task<Project> GetAsync(Guid id, CancellationToken token)
+        public override async Task<Project> GetAsync(Guid id, CancellationToken token)
         {
             if (id == null || id == Guid.Empty)
             {
@@ -260,7 +258,7 @@ namespace AbleSync.Infrastructure.Repositories
             return await GetAsync(id, token);
         }
 
-        public Task<Project> UpdateAsync(Project project, CancellationToken token)
+        public override Task UpdateAsync(Project project, CancellationToken token)
             => throw new NotImplementedException();
 
         /// <summary>

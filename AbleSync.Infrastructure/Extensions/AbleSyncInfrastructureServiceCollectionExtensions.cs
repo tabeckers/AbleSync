@@ -29,6 +29,7 @@ namespace AbleSync.Infrastructure.Extensions
             services.AddScoped<DbProvider, NpgsqlDbProvider>();
 
             // Add repositories.
+            services.AddScoped<IAudioFileRepository, AudioFileRepository>();
             services.AddScoped<IProjectRepository, ProjectRepository>();
             services.AddScoped<IProjectTaskRepository, ProjectTaskRepository>();
 
