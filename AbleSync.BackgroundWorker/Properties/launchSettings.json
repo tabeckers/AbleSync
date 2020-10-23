@@ -2,6 +2,7 @@
   "profiles": {
     "AbleSync.BackgroundWorker": {
       "commandName": "Project",
+      "commandLineArgs": "--configdir \"C:/Users/thoma/Programming/Self/AbleSync/AbleSync.BackgroundWorker\"",
       "environmentVariables": {
         "DOTNET_ENVIRONMENT": "Development"
       }
