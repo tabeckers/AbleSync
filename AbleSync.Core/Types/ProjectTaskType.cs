@@ -1,5 +1,6 @@
 ﻿namespace AbleSync.Core.Types
 {
+    // TODO Do we want this as an enum?
     /// <summary>
     ///     Represents the type of project task.
     /// </summary>

@@ -16,7 +16,11 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AbleSync.BackgroundWorker",
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "contrib", "contrib", "{904A4033-E90E-4BF6-9766-59F29EF7D51E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RenameMe.Utility", "RenameMe.Utility\RenameMe.Utility.csproj", "{521DAA83-FF6B-49F5-8C7E-5AB77A6E10D2}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RenameMe.Utility", "RenameMe.Utility\RenameMe.Utility.csproj", "{521DAA83-FF6B-49F5-8C7E-5AB77A6E10D2}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Test", "Test", "{2DFC01C1-F2C1-428A-9A7D-3D075E42596D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AbleSync.Core.Host", "AbleSync.Core.Host\AbleSync.Core.Host.csproj", "{9FFEDB60-1153-4921-B118-F50B5998B00D}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -40,6 +44,10 @@ Global
 		{521DAA83-FF6B-49F5-8C7E-5AB77A6E10D2}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{521DAA83-FF6B-49F5-8C7E-5AB77A6E10D2}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{521DAA83-FF6B-49F5-8C7E-5AB77A6E10D2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9FFEDB60-1153-4921-B118-F50B5998B00D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9FFEDB60-1153-4921-B118-F50B5998B00D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9FFEDB60-1153-4921-B118-F50B5998B00D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9FFEDB60-1153-4921-B118-F50B5998B00D}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

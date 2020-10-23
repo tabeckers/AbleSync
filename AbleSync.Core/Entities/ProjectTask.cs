@@ -3,6 +3,7 @@ using System;
 
 namespace AbleSync.Core.Entities
 {
+    // TODO Should this be an entity?
     /// <summary>
     ///     Class that represents a processing task for a <see cref="Project"/>.
     /// </summary>

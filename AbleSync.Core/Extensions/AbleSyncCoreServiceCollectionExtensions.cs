@@ -1,4 +1,5 @@
 ﻿using AbleSync.Core.Interfaces.Services;
+using AbleSync.Core.ProjectTaskExecuters;
 using AbleSync.Core.Services;
 using Microsoft.Extensions.DependencyInjection;
 using System;
@@ -22,11 +23,16 @@ namespace AbleSync.Core.Extensions
                 throw new ArgumentNullException(nameof(services));
             }
 
+            // TODO Look at service lifetimes.
+
             // Add services.
             services.AddScoped<IProjectScrapingService, ProjectScrapingService>();
             services.AddScoped<IProjectAnalyzingService, ProjectAnalyzingService>();
-            services.AddScoped<IProjectTaskProcessingService, ProjectTaskProcessingService>();
+            services.AddScoped<IProjectTaskExecuterService, ProjectTaskExecuterService>();
             services.AddScoped<IFileTrackingService, FileTrackingService>();
+
+            // Add task executors
+            services.AddScoped<UploadAudioExecuter>();
 
             return services;
         }

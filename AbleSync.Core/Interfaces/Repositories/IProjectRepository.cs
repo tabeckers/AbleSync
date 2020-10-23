@@ -52,6 +52,14 @@ namespace AbleSync.Core.Interfaces.Repositories
         Task<Project> GetAsync(Guid id, CancellationToken token);
 
         /// <summary>
+        ///     Marks a project as scraped by setting it's update date.
+        /// </summary>
+        /// <param name="id">The project id.</param>
+        /// <param name="token">The cancellation token.</param>
+        /// <returns>The updated project as fetched from the data store.</returns>
+        Task<Project> MarkProjectAsScrapedAsync(Guid id, CancellationToken token);
+
+        /// <summary>
         ///     Marks the status of a <see cref="Project"/>.
         /// </summary>
         /// <param name="id">Internal project id.</param>

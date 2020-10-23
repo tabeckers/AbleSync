@@ -10,12 +10,14 @@
     <PackageReference Include="Microsoft.Extensions.Configuration.FileExtensions" Version="3.1.9" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="3.1.9" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="3.1.9" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="3.1.9" />
     <PackageReference Include="Microsoft.Extensions.Logging" Version="3.1.9" />
     <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="3.1.9" />
     <PackageReference Include="System.Linq.Async" Version="4.1.1" />
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\AbleSync.Core.Host\AbleSync.Core.Host.csproj" />
     <ProjectReference Include="..\AbleSync.Core\AbleSync.Core.csproj" />
     <ProjectReference Include="..\AbleSync.Infrastructure\AbleSync.Infrastructure.csproj" />
   </ItemGroup>
