@@ -1,4 +1,5 @@
 ﻿using AbleSync.Core.Interfaces.Services;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Threading;
@@ -19,15 +20,15 @@ namespace AbleSync.Core.Host.BackgroundServices
     /// </remarks>
     public sealed class PeriodicScrapingBackgroundService : PeriodicBackgroundService<PeriodicScrapingBackgroundService>
     {
-        private readonly IProjectScrapingService _projectScrapingService;
+        private readonly IServiceProvider _provider;
 
         /// <summary>
         ///     Create new instance.
         /// </summary>
-        public PeriodicScrapingBackgroundService(IProjectScrapingService projectScrapingService,
+        public PeriodicScrapingBackgroundService(IServiceProvider provider,
             ILogger<PeriodicScrapingBackgroundService> logger)
             : base(TimeSpan.FromSeconds(20), logger)
-            => _projectScrapingService = projectScrapingService ?? throw new ArgumentNullException(nameof(projectScrapingService));
+            => _provider = provider ?? throw new ArgumentNullException(nameof(provider));
 
         // TODO Async voids are dangerous.
         /// <summary>
@@ -38,7 +39,10 @@ namespace AbleSync.Core.Host.BackgroundServices
         {
             try
             {
-                await _projectScrapingService.ProcessRootDirectoryRecursivelyAsync(token);
+                using var scope = _provider.CreateScope();
+
+                var service = scope.ServiceProvider.GetService<IProjectScrapingService>();
+                await service.ProcessRootDirectoryRecursivelyAsync(token);
             }
             catch (Exception e)
             {

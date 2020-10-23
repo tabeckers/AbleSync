@@ -1,5 +1,6 @@
 ﻿using AbleSync.Core.Entities;
 using AbleSync.Core.Interfaces.Services;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using System;
@@ -18,18 +19,18 @@ namespace AbleSync.Core.Host.BackgroundServices
         private Timer _timer;
 
         private readonly QueueManager _queueManager;
-        private readonly IProjectTaskExecuterService _projectTaskExecuterService;
+        private readonly IServiceProvider _provider;
         private readonly ILogger<QueueManagerBackgroundService> _logger;
 
         /// <summary>
         ///     Create new instance.
         /// </summary>
         public QueueManagerBackgroundService(QueueManager queueManager,
-            IProjectTaskExecuterService projectTaskExecuterService,
+            IServiceProvider provider,
             ILogger<QueueManagerBackgroundService> logger)
         {
             _queueManager = queueManager ?? throw new ArgumentNullException(nameof(queueManager));
-            _projectTaskExecuterService = projectTaskExecuterService ?? throw new ArgumentNullException(nameof(projectTaskExecuterService));
+            _provider = provider ?? throw new ArgumentNullException(nameof(provider));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
@@ -69,11 +70,14 @@ namespace AbleSync.Core.Host.BackgroundServices
                     return;
                 }
 
+                using var scope = _provider.CreateScope();
+                var projectTaskExecuterService = scope.ServiceProvider.GetService<IProjectTaskExecuterService>();
+
                 var item = _queueManager.Dequeue();
 
                 _logger.LogInformation($"Dequeued item {item.Id}");
 
-                await _projectTaskExecuterService.ProcessProjectTaskAsync(item, token);
+                await projectTaskExecuterService.ProcessProjectTaskAsync(item, token);
 
                 _logger.LogInformation($"Processed item {item.Id}");
             }

@@ -32,6 +32,26 @@ namespace AbleSync.BackgroundWorker
         /// <returns>The created host builder</returns>
         public static IHostBuilder CreateHostBuilder(string[] args) =>
              Host.CreateDefaultBuilder(args)
+                .ConfigureAppConfiguration((hostContext, config) =>
+                {
+                    // FUTURE Still suboptimal. Add cmd args? Conventions?
+#if DEBUG
+                    var basePath = @"C:\Users\thoma\Programming\Self\AbleSync\AbleSync.BackgroundWorker";
+#else
+                    var basePath = Directory.GetCurrentDirectory();
+#endif
+
+                    config.SetBasePath(basePath);
+                    config.AddJsonFile("appsettings.json", optional: true);
+                    config.AddJsonFile($"appsettings.{hostContext.HostingEnvironment.EnvironmentName}.json", optional: true);
+                    config.AddEnvironmentVariables(prefix: "ABLESYNC_");
+                    config.AddCommandLine(args);
+                })
+                .ConfigureLogging((hostContext, config) =>
+                {
+                    config.AddConsole();
+                    config.SetMinimumLevel(LogLevel.Trace); // TODO From appsettings
+                })
                 .ConfigureServices((hostContext, services) =>
                 {
                     ConfigureServices(services);
@@ -48,27 +68,9 @@ namespace AbleSync.BackgroundWorker
             services.AddAbleSyncCoreServices();
             services.AddAbleSyncInfrastructureServices();
 
-            // Setup utility.
-            // TODO The config doesn't enfore the level
-            services.AddLogging(options =>
-            {
-                options.AddConsole();
-                options.SetMinimumLevel(LogLevel.Trace);
-            });
-
-            // Add configuration.
-            // TODO Make environment dependent.
-            // TODO Clean up directory mess.
-            var basePath = new DirectoryInfo(Directory.GetCurrentDirectory()).Parent.Parent.Parent;
-            var configuration = new ConfigurationBuilder()
-                .SetBasePath(basePath.FullName)
-                .AddJsonFile("appsettings.json", optional: false)
-                .AddJsonFile("appsettings.development.json", optional: true)
-                .AddEnvironmentVariables()
-                .Build();
-            services.AddScoped<IConfiguration>(_ => configuration);
-
             // Setup actual configuration.
+            // TODO This is incorrect I think.
+            var configuration = services.BuildServiceProvider().GetRequiredService<IConfiguration>();
             services.Configure<AbleSyncOptions>(options => configuration.GetSection("AbleSyncOptions").Bind(options));
             services.Configure<BlobStorageOptions>(options => configuration.GetSection("BlobStorage").Bind(options));
             services.Configure<DbProviderOptions>(config =>

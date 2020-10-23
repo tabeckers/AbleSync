@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "AbleSync.BackgroundWorker": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "DOTNET_ENVIRONMENT": "Development"
+      }
+    }
+  }
+}
