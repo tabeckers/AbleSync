@@ -51,7 +51,6 @@ namespace AbleSync.BackgroundWorker
                 .ConfigureLogging((hostContext, config) =>
                 {
                     config.AddConsole();
-                    //config.SetMinimumLevel(LogLevel.Trace); // TODO From appsettings
                 })
                 .ConfigureServices((hostContext, services) =>
                 {
