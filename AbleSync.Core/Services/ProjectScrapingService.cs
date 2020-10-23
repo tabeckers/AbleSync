@@ -88,6 +88,7 @@ namespace AbleSync.Core.Services
             }
         }
 
+        // TODO TransactionScope?
         /// <summary>
         ///     Processes a single Ableton project folder by syncing its metadata
         ///     to our data store. If the state is considered invalid, this is
