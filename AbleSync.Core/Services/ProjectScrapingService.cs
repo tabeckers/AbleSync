@@ -170,9 +170,9 @@ namespace AbleSync.Core.Services
                     extractedProject.RelativePath = PathHelper.GetRelativePath(directoryInfo.FullName, root);
 
                     // TODO Transaction?
-                    var createdProject = await _projectRepository.CreateAsync(extractedProject, token);
-                    _fileTrackingService.CreateTrackingFile(createdProject.Id, directoryInfo);
-                    _logger.LogTrace($"A new tracking file has been created for project {createdProject.Id} at {directoryInfo.FullName}");
+                    var createdProjectId = await _projectRepository.CreateAsync(extractedProject, token);
+                    _fileTrackingService.CreateTrackingFile(createdProjectId, directoryInfo);
+                    _logger.LogTrace($"A new tracking file has been created for project {createdProjectId} at {directoryInfo.FullName}");
 
                     return;
                 }

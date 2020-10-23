@@ -8,16 +8,16 @@
         /// <summary>
         ///     .mp3 file format.
         /// </summary>
-        MP3,
+        Mp3 = 0,
 
         /// <summary>
         ///     .wav file format.
         /// </summary>
-        WAV,
+        Wav = 1,
 
         /// <summary>
         ///     .flac file format.
         /// </summary>
-        FLAC
+        Flac = 2
     }
 }

@@ -34,11 +34,15 @@
                 AudioFlacFileExtension
             };
 
-        // TODO Implement structure.
         /// <summary>
-        ///     Project folders storage base folder..
+        ///     Project folders storage folder name.
         /// </summary>
         public const string StorageProjectFolderBase = "projects";
+
+        /// <summary>
+        ///     Audio file storage folder name.
+        /// </summary>
+        public const string StorageAudioFilesFolder = "audiofiles";
 
         public const string ContentTypeMp3 = "audio/mpeg3";
 
