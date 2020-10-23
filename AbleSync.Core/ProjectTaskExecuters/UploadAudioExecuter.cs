@@ -93,13 +93,8 @@ namespace AbleSync.Core.ProjectTaskExecuters
                     ProjectId = project.Id
                 }, token);
 
-            // TODO Beun
-            var parsedPath = project.RelativePath.Replace("\\", "/", StringComparison.InvariantCulture);
-            var path = $"{_options.RootDirectoryPath.AbsolutePath}/{parsedPath}";
-            path = path.Replace("%20", " ", StringComparison.InvariantCulture);
-
             var fileNamePhysical = audioFilePhysical.Name;
-            var folderNamePhysical = $"{path}";
+            var folderNamePhysical = $"{DirectoryInfoHelper.ParsePathFromProject(_options.RootDirectoryPath, project)}";
             using var fileStream = new FileStream($"{folderNamePhysical}/{fileNamePhysical}", FileMode.Open, FileAccess.Read);
 
             var fileNameStorage = FileStorageHelper.AudioFileName(audioFileEntity.Id);

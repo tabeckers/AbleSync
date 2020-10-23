@@ -27,12 +27,32 @@ namespace AbleSync.Core.Helpers
                 throw new ArgumentNullException(nameof(project));
             }
 
+            return new DirectoryInfo(ParsePathFromProject(rootDirectory, project));
+        }
+
+        /// <summary>
+        ///     Parses a project path.
+        /// </summary>
+        /// <param name="rootDirectory">The ablesync root.</param>
+        /// <param name="project">The project to parse.</param>
+        /// <returns>The full path string, escaped.</returns>
+        public static string ParsePathFromProject(Uri rootDirectory, Project project)
+        {
+            if (rootDirectory == null)
+            {
+                throw new ArgumentNullException(nameof(rootDirectory));
+            }
+            if (project == null)
+            {
+                throw new ArgumentNullException(nameof(project));
+            }
+
             // TODO Beun, see https://github.com/tabeckers/AbleSync/issues/19
             var parsedPath = project.RelativePath.Replace("\\", "/", StringComparison.InvariantCulture);
             var path = $"{rootDirectory.AbsolutePath}/{parsedPath}";
             path = path.Replace("%20", " ", StringComparison.InvariantCulture);
 
-            return new DirectoryInfo(path);
+            return path;
         }
     }
 }
