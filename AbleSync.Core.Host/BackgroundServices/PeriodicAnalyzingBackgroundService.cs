@@ -3,6 +3,7 @@ using AbleSync.Core.Interfaces.Repositories;
 using AbleSync.Core.Interfaces.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using System;
 using System.Linq;
 using System.Threading;
@@ -23,11 +24,15 @@ namespace AbleSync.Core.Host.BackgroundServices
         /// </summary>
         public PeriodicAnalyzingBackgroundService(QueueManager queueManager,
             IServiceProvider provider,
+            IOptions<AbleSyncOptions> options,
             ILogger<PeriodicAnalyzingBackgroundService> logger)
-            : base(TimeSpan.FromSeconds(15), logger)
+            : base(logger)
         {
             _queueManager = queueManager ?? throw new ArgumentNullException(nameof(queueManager));
             _provider = provider ?? throw new ArgumentNullException(nameof(provider));
+
+            var interval = options?.Value?.IntervalAnalyzingMinutes ?? throw new ArgumentNullException(nameof(options));
+            SetInterval(TimeSpan.FromMinutes(interval));
         }
 
         // TODO Async voids are dangerous.

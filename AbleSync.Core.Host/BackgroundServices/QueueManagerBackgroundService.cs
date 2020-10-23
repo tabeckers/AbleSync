@@ -1,5 +1,4 @@
-﻿using AbleSync.Core.Entities;
-using AbleSync.Core.Interfaces.Services;
+﻿using AbleSync.Core.Interfaces.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -10,6 +9,7 @@ using System.Threading.Tasks;
 namespace AbleSync.Core.Host.BackgroundServices
 {
     // TODO Is this correct use of DI?
+    // TODO This should be event based, not polling.
     /// <summary>
     ///     Wrapper to launch <see cref="QueueManager"/> so 
     ///     it can be accessed through the DI.

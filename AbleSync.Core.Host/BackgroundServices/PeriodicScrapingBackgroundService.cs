@@ -1,6 +1,7 @@
 ﻿using AbleSync.Core.Interfaces.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using System;
 using System.Threading;
 
@@ -26,9 +27,15 @@ namespace AbleSync.Core.Host.BackgroundServices
         ///     Create new instance.
         /// </summary>
         public PeriodicScrapingBackgroundService(IServiceProvider provider,
+            IOptions<AbleSyncOptions> options,
             ILogger<PeriodicScrapingBackgroundService> logger)
-            : base(TimeSpan.FromSeconds(20), logger)
-            => _provider = provider ?? throw new ArgumentNullException(nameof(provider));
+            : base(logger)
+        {
+            _provider = provider ?? throw new ArgumentNullException(nameof(provider));
+
+            var interval = options?.Value?.IntervalAnalyzingMinutes ?? throw new ArgumentNullException(nameof(options));
+            SetInterval(TimeSpan.FromMinutes(interval));
+        }
 
         // TODO Async voids are dangerous.
         /// <summary>
