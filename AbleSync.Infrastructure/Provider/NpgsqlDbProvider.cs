@@ -2,7 +2,6 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
 using Npgsql;
-using Npgsql.TypeMapping;
 using System.Data.Common;
 
 namespace AbleSync.Infrastructure.Provider
@@ -26,6 +25,7 @@ namespace AbleSync.Infrastructure.Provider
         /// </summary>
         static NpgsqlDbProvider()
         {
+            NpgsqlConnection.GlobalTypeMapper.MapEnum<AudioFormat>("entities.audio_format");
             NpgsqlConnection.GlobalTypeMapper.MapEnum<ProjectStatus>("entities.project_status");
             NpgsqlConnection.GlobalTypeMapper.MapEnum<ProjectTaskStatus>("entities.project_task_status");
             NpgsqlConnection.GlobalTypeMapper.MapEnum<ProjectTaskType>("entities.project_task_type");

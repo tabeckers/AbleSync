@@ -12,13 +12,16 @@ using System.Threading.Tasks;
 
 namespace AbleSync.Core.Services
 {
+    // TODO Look at this properly for version 0.2.
     /// <summary>
     ///     Scraping service which can scrape Ableton project folders.
     /// </summary>
+    /// <remarks>
+    ///     This does nothing with project tasks.
+    /// </remarks>
     public class ProjectScrapingService : IProjectScrapingService
     {
-        protected readonly IFileTrackingService _fileTrackingService;
-        protected readonly IProjectAnalyzingService _projectAnalyzingService;
+        protected readonly ITrackingFileService _trackingFileService;
         protected readonly IProjectRepository _projectRepository;
         protected readonly ILogger<ProjectScrapingService> _logger;
         protected readonly AbleSyncOptions _options;
@@ -26,14 +29,12 @@ namespace AbleSync.Core.Services
         /// <summary>
         ///     Create new instance.
         /// </summary>
-        public ProjectScrapingService(IFileTrackingService fileTrackingService,
-            IProjectAnalyzingService projectAnalyzingService,
+        public ProjectScrapingService(ITrackingFileService fileTrackingService,
             IProjectRepository projectRepository,
             ILogger<ProjectScrapingService> logger,
             IOptions<AbleSyncOptions> options)
         {
-            _fileTrackingService = fileTrackingService ?? throw new ArgumentNullException(nameof(fileTrackingService));
-            _projectAnalyzingService = projectAnalyzingService ?? throw new ArgumentNullException(nameof(projectAnalyzingService));
+            _trackingFileService = fileTrackingService ?? throw new ArgumentNullException(nameof(fileTrackingService));
             _projectRepository = projectRepository ?? throw new ArgumentNullException(nameof(projectRepository));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _options = options?.Value ?? throw new ArgumentNullException(nameof(options));
@@ -87,12 +88,15 @@ namespace AbleSync.Core.Services
             }
         }
 
+        // TODO TransactionScope?
         /// <summary>
         ///     Processes a single Ableton project folder by syncing its metadata
         ///     to our data store. If the state is considered invalid, this is
         ///     marked both in our data store and in our tracking file.
         /// </summary>
         /// <remarks>
+        ///     This does nothing with project tasks.
+        /// 
         ///     If the given <paramref name="directoryInfo"/> is not an Ableton 
         ///     project directory, this will throw an exception of type
         ///     <see cref="NotAnAbletonProjectFolderException"/>.
@@ -121,13 +125,13 @@ namespace AbleSync.Core.Services
                     throw new NotAnAbletonProjectFolderException();
                 }
 
-                if (_fileTrackingService.HasTrackingFile(directoryInfo))
+                if (_trackingFileService.HasTrackingFile(directoryInfo))
                 {
                     // If marked invalid, this service will log and skip.
-                    var trackingFile = _fileTrackingService.GetTrackingFile(directoryInfo);
-                    if (trackingFile.ProjectStatus == ProjectStatus.Invalid)
+                    var trackingFile = _trackingFileService.GetTrackingFile(directoryInfo);
+                    if (trackingFile.TrackingFileStatus == TrackingFileStatus.InvalidLocal)
                     {
-                        _logger.LogInformation($"Project with id {trackingFile.ProjectId} marked as invalid, skipping");
+                        _logger.LogWarning($"Project with id {trackingFile.ProjectId} marked as invalid, skipping");
                         return;
                     }
 
@@ -135,7 +139,7 @@ namespace AbleSync.Core.Services
                     {
                         // If the project has a tracking file but does not exist in the store, 
                         // we have reached an invalid state. This should never happen.
-                        _fileTrackingService.MarkTrackingFileInvalid(directoryInfo);
+                        _trackingFileService.MarkTrackingFileInvalidLocal(directoryInfo);
                         _logger.LogWarning($"Project with id {trackingFile.ProjectId} has a tracking file" +
                             $"but does not exist in the store - marked as invalid.");
                         return;
@@ -144,8 +148,13 @@ namespace AbleSync.Core.Services
                     {
                         // The state where there exists a tracking file and where the project
                         // exists in the data store is valid. We can continue to process.
-                        await ProcessProjectAsync(directoryInfo, token);
-                        _logger.LogTrace($"Project with id {trackingFile.ProjectId} has been updated");
+                        // TODO Transaction?
+                        var project = await _projectRepository.GetAsync(trackingFile.ProjectId, token);
+
+                        project = await _projectRepository.MarkProjectAsScrapedAsync(trackingFile.ProjectId, token);
+                        _trackingFileService.MarkProjectScraped(directoryInfo);
+
+                        _logger.LogTrace($"Project with id {trackingFile.ProjectId} has been scraped");
                         return;
                     }
                 }
@@ -159,12 +168,10 @@ namespace AbleSync.Core.Services
                     var root = _options.RootDirectoryPath.LocalPath;
                     extractedProject.RelativePath = PathHelper.GetRelativePath(directoryInfo.FullName, root);
 
-                    var createdProject = await _projectRepository.CreateAsync(extractedProject, token);
-                    _fileTrackingService.CreateTrackingFile(createdProject.Id, directoryInfo);
-                    _logger.LogTrace($"A new tracking file has been created for project {createdProject.Id} at {directoryInfo.FullName}");
-
-                    // Also process
-                    await ProcessProjectAsync(directoryInfo, token);
+                    // TODO Transaction?
+                    var createdProjectId = await _projectRepository.CreateAsync(extractedProject, token);
+                    _trackingFileService.CreateTrackingFile(createdProjectId, directoryInfo);
+                    _logger.LogTrace($"A new tracking file has been created for project {createdProjectId} at {directoryInfo.FullName}");
 
                     return;
                 }
@@ -184,22 +191,5 @@ namespace AbleSync.Core.Services
         /// <returns><see cref="Task"/></returns>
         public Task ProcessRootDirectoryRecursivelyAsync(CancellationToken token)
             => ProcessDirectoryRecursivelyAsync(new DirectoryInfo(_options.RootDirectoryPath.LocalPath), token);
-
-        /// <summary>
-        ///     This performs all required operations on a project that is in
-        ///     sync with our data store.
-        /// </summary>
-        /// <param name="token">Cancellation token.</param>
-        /// <returns><see cref="Task"/></returns>
-        private async Task ProcessProjectAsync(DirectoryInfo directoryInfo, CancellationToken token)
-        {
-            var trackingFile = _fileTrackingService.GetTrackingFile(directoryInfo);
-
-            await _projectAnalyzingService.SyncTasksForProjectAsync(directoryInfo, token);
-
-            var projectAfterTaskUpdate = await _projectRepository.GetAsync(trackingFile.ProjectId, token);
-            _fileTrackingService.UpdateTrackingFile(directoryInfo, projectAfterTaskUpdate);
-        }
-
     }
 }

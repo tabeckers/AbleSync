@@ -1,5 +1,5 @@
-﻿using AbleSync.Core.Entities;
-using AbleSync.Core.Exceptions;
+﻿using AbleSync.Core.Exceptions;
+using AbleSync.Core.Extensions;
 using AbleSync.Core.Helpers;
 using AbleSync.Core.Interfaces.Services;
 using AbleSync.Core.Types;
@@ -17,7 +17,7 @@ namespace AbleSync.Core.Services
     /// <remarks>
     ///     This only operates locally and has no knowledge of any data store.
     /// </remarks>
-    public class FileTrackingService : IFileTrackingService
+    public class TrackingFileService : ITrackingFileService
     {
         /// <summary>
         ///     Creates a new tracking file.
@@ -49,9 +49,13 @@ namespace AbleSync.Core.Services
             var trackingFile = new TrackingFile
             {
                 ProjectId = projectId,
+                TrackingFileDateCreated = DateTimeOffset.Now,
+                ProjectDateScraped = DateTimeOffset.Now,
+                TrackingFileStatus = TrackingFileStatus.UpToDate
             };
 
             WriteToFile(directoryInfo, trackingFile);
+
             return trackingFile;
         }
 
@@ -72,7 +76,7 @@ namespace AbleSync.Core.Services
             }
 
             var trackingFile = GetTrackingFile(directoryInfo);
-            File.Delete($"{directoryInfo.FullName}/{trackingFile.ProjectId}{Constants.TrackingFileExtension}");
+            File.Delete($"{directoryInfo.FullPathFormatted()}/{trackingFile.ProjectId}{Constants.TrackingFileExtension}");
         }
 
         /// <summary>
@@ -106,7 +110,7 @@ namespace AbleSync.Core.Services
             var trackingFileName = trackingFileCandidates.First();
             var projectId = trackingFileName.Name.Replace(Constants.TrackingFileExtension, "", StringComparison.InvariantCulture);
 
-            var path = $"{directoryInfo.FullName}/{projectId}{Constants.TrackingFileExtension}";
+            var path = $"{directoryInfo.FullPathFormatted()}/{projectId}{Constants.TrackingFileExtension}";
             return FileHelper.GetFile<TrackingFile>(path);
         }
 
@@ -142,7 +146,7 @@ namespace AbleSync.Core.Services
         /// </summary>
         /// <param name="directoryInfo">The directory of the file.</param>
         /// <returns><see cref="Task"/></returns>
-        public TrackingFile MarkTrackingFileInvalid(DirectoryInfo directoryInfo)
+        public void MarkTrackingFileInvalidLocal(DirectoryInfo directoryInfo)
         {
             if (directoryInfo == null)
             {
@@ -150,38 +154,46 @@ namespace AbleSync.Core.Services
             }
 
             var trackingFile = GetTrackingFile(directoryInfo);
-            trackingFile.ProjectStatus = ProjectStatus.Invalid;
-            OverwriteFile(directoryInfo, trackingFile);
 
-            return trackingFile;
+            trackingFile.TrackingFileStatus = TrackingFileStatus.InvalidLocal;
+
+            OverwriteFile(directoryInfo, trackingFile);
         }
 
         /// <summary>
-        ///     Updates a <see cref="TrackingFile"/> in a project folder based
-        ///     on the current state of the file and its <see cref="Project"/>.
+        ///     Marks a tracking file as scraped at the moment of execution.
         /// </summary>
-        /// <param name="directoryInfo">The respective directory.</param>
-        /// <param name="project">The tracking files project.</param>
-        /// <returns>The updated <see cref="TrackingFile"/>.</returns>
-        public TrackingFile UpdateTrackingFile(DirectoryInfo directoryInfo, Project project)
+        /// <param name="directoryInfo">The directory of the file.</param>
+        public void MarkProjectScraped(DirectoryInfo directoryInfo)
         {
             if (directoryInfo == null)
             {
                 throw new ArgumentNullException(nameof(directoryInfo));
             }
-            if (project == null)
+
+            var trackingFile = GetTrackingFile(directoryInfo);
+
+            trackingFile.ProjectDateScraped = DateTimeOffset.Now;
+
+            OverwriteFile(directoryInfo, trackingFile);
+        }
+
+        /// <summary>
+        ///     Marks a tracking file as analyzed at the moment of execution.
+        /// </summary>
+        /// <param name="directoryInfo">The directory of the file.</param>
+        public void MarkProjectAnalyzed(DirectoryInfo directoryInfo)
+        {
+            if (directoryInfo == null)
             {
-                throw new ArgumentNullException(nameof(project));
+                throw new ArgumentNullException(nameof(directoryInfo));
             }
 
             var trackingFile = GetTrackingFile(directoryInfo);
-            trackingFile.ProjectStatus = project.ProjectStatus;
-            trackingFile.ProjectDateCreated = project.DateCreated;
-            trackingFile.DateUpdated = project.DateUpdated;
+
+            trackingFile.ProjectDateAnalyzed = DateTimeOffset.Now;
 
             OverwriteFile(directoryInfo, trackingFile);
-
-            return trackingFile;
         }
 
         /// <summary>
@@ -195,6 +207,7 @@ namespace AbleSync.Core.Services
             WriteToFile(directoryInfo, trackingFile);
         }
 
+        // TODO Move to helper
         /// <summary>
         ///     Actually writes a <see cref="TrackingFile"/> to file.
         /// </summary>
@@ -202,7 +215,7 @@ namespace AbleSync.Core.Services
         /// <param name="trackingFile">The tracking file to write.</param>
         private static void WriteToFile(DirectoryInfo directoryInfo, TrackingFile trackingFile)
         {
-            var path = $"{directoryInfo.FullName}/{trackingFile.ProjectId}{Constants.TrackingFileExtension}";
+            var path = $"{directoryInfo.FullPathFormatted()}/{trackingFile.ProjectId}{Constants.TrackingFileExtension}";
             using var stream = new FileStream(path, FileMode.Create);
 
             var formatter = new BinaryFormatter();

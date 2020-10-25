@@ -1,83 +1,128 @@
 ﻿using AbleSync.Core.Entities;
+using AbleSync.Core.Exceptions;
+using AbleSync.Core.Helpers;
 using AbleSync.Core.Interfaces.Repositories;
 using AbleSync.Core.Interfaces.Services;
+using AbleSync.Core.Managers;
 using AbleSync.Core.Types;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using RenameMe.Utility.Extensions;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace AbleSync.Core.Services
 {
     /// <summary>
-    ///     Analyzer class for <see cref="Project"/> entities to determine
+    ///     Analyzer class for project folders to determine
     ///     which <see cref="ProjectTask"/>s should be created.
     /// </summary>
+    /// <remarks>
+    ///     This does not sync any project tasks with the data store.
+    /// </remarks>
     internal class ProjectAnalyzingService : IProjectAnalyzingService
     {
-        protected readonly IProjectTaskRepository _projectTaskRepository;
-        protected readonly IFileTrackingService _fileTrackingService;
+        protected readonly IProjectRepository _projectRepository;
+        protected readonly ITrackingFileService _fileTrackingService;
+        protected readonly QueueManager _queueManager;
+        protected readonly AbleSyncOptions _options;
+        protected readonly ILogger<ProjectAnalyzingService> _logger;
 
         /// <summary>
         ///     Create new instance.
         /// </summary>
-        public ProjectAnalyzingService(IProjectTaskRepository projectTaskRepository,
-            IFileTrackingService fileTrackingService)
+        public ProjectAnalyzingService(IProjectRepository projectRepository,
+            ITrackingFileService fileTrackingService,
+            QueueManager queueManager,
+            IOptions<AbleSyncOptions> options,
+            ILogger<ProjectAnalyzingService> logger)
         {
-            _projectTaskRepository = projectTaskRepository ?? throw new ArgumentNullException(nameof(projectTaskRepository));
+            _projectRepository = projectRepository ?? throw new ArgumentNullException(nameof(projectRepository));
             _fileTrackingService = fileTrackingService ?? throw new ArgumentNullException(nameof(fileTrackingService));
+            _options = options?.Value ?? throw new ArgumentNullException(nameof(options));
+            _queueManager = queueManager ?? throw new ArgumentNullException(nameof(queueManager));
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
-        // FUTURE Make IAsyncEnumerable
         /// <summary>
-        ///     Analyzes a project and determines which <see cref="ProjectTask"/>
-        ///     entities will have to be executed for said project.
+        ///     Analyze a project, determine which project tasks have
+        ///     to be exectued and return all these project tasks. All
+        ///     tasks are then enqueued.
         /// </summary>
         /// <remarks>
-        ///     Any tasks that should be done for this project will be stored
-        ///     in the data store. Any existing tasks will be compared to the 
-        ///     result of the task analysis.
+        ///     This does not sync any project tasks with the data store.
         /// </remarks>
-        /// <param name="directoryInfo">The project directory.</param>
-        /// <param name="token">Cancellation token.</param>
-        /// <returns>A collection of project tasks for the project.</returns>
-        public async Task<IEnumerable<ProjectTask>> SyncTasksForProjectAsync(DirectoryInfo directoryInfo, CancellationToken token)
+        /// <param name="projectId">The project to analyze.</param>
+        /// <param name="token">The cancellation token.</param>
+        public async Task AnalyzeProjectEnqueueTasksAsync(Guid projectId, CancellationToken token)
         {
-            if (directoryInfo == null)
+            projectId.ThrowIfNullOrEmpty();
+            var project = await _projectRepository.GetAsync(projectId, token);
+
+            // TODO This should not have directory info
+            var directoryInfo = DirectoryInfoHelper.GetFromProject(_options.RootDirectoryPath, project);
+
+            var trackingFile = _fileTrackingService.GetTrackingFile(directoryInfo);
+
+            var result = new List<ProjectTask>();
+
+            if (DoesDirectoryContainAudioFiles(directoryInfo))
             {
-                throw new ArgumentNullException(nameof(directoryInfo));
+                // FUTURE Check for changes in audio file. https://github.com/tabeckers/AbleSync/issues/27
+                result.Add(new ProjectTask
+                {
+                    Id = Guid.NewGuid(), // TODO Like this?
+                    ProjectId = trackingFile.ProjectId,
+                    ProjectTaskType = ProjectTaskType.UploadAudio,
+                });
             }
+
+            // FUTURE Other task types as well
+
+            EnqueueAll(result);
+
+            _logger.LogTrace($"Analyzed and enqueued {result.Count} tasks for project {projectId}");
+        }
+
+        /// <summary>
+        ///     Calls <see cref="AnalyzeAllProjectsEnqueueTasksAsync"/> for
+        ///     each project in our data store.
+        /// </summary>
+        /// <param name="token">The cancellation token.</param>
+        public async Task AnalyzeAllProjectsEnqueueTasksAsync(CancellationToken token)
+        {
             if (token == null)
             {
                 throw new ArgumentNullException(nameof(token));
             }
 
-            var trackingFile = _fileTrackingService.GetTrackingFile(directoryInfo);
-
-            var existingTasks = await _projectTaskRepository.GetAllForProjectAsync(trackingFile.ProjectId, token).ToListAsync(token);
-
-            // TODO Check for changes in audio file. https://github.com/tabeckers/AbleSync/issues/27
-
-            // If we don't have a sync audio task, create one. If we already have
-            // one, the background worker will simply sync the latest audio file.
-            if (!existingTasks.Where(x => x.ProjectTaskType == ProjectTaskType.UploadAudio).Any() &&
-                DoesDirectoryContainAudioFiles(directoryInfo))
+            await foreach (var project in _projectRepository.GetAllAsync(token))
             {
-                await _projectTaskRepository.CreateAsync(new ProjectTask
-                {
-                    ProjectId = trackingFile.ProjectId,
-                    ProjectTaskType = ProjectTaskType.UploadAudio,
-                }, token);
+                await AnalyzeProjectEnqueueTasksAsync(project.Id, token);
             }
-
-            // FUTURE Here we will determin other types of tasks as well.
-
-            return await _projectTaskRepository.GetAllForProjectAsync(trackingFile.ProjectId, token).ToListAsync(token);
         }
 
+        private void EnqueueAll(IEnumerable<ProjectTask> projectTasks)
+        {
+            foreach (var projectTask in projectTasks)
+            {
+                try
+                {
+                    _queueManager.Enqueue(projectTask);
+                }
+                catch (QueueFullException e)
+                {
+                    // TODO Do we want to skip the queue when it's full?
+                    _logger.LogWarning($"Queue was full, skipping task {projectTask.Id} of type {projectTask.ProjectTaskType}", e);
+                }
+            }
+        }
+
+        // TODO Move to helper.
         /// <summary>
         ///     Checks if a directory contains one or more audio files.
         /// </summary>
