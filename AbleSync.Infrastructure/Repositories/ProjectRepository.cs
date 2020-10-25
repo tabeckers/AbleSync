@@ -135,7 +135,7 @@ namespace AbleSync.Infrastructure.Repositories
             await using var connection = await _provider.OpenConnectionScopeAsync(token);
             await using var command = _provider.CreateCommand(sql, connection);
 
-            await using var reader = await command.ExecuteReaderAsyncEnsureRowAsync();
+            await using var reader = await command.ExecuteReaderAsync();
 
             while (await reader.ReadAsync(token))
             {
