@@ -10,7 +10,7 @@ namespace AbleSync.Core.Interfaces.Services
     ///     Contract for a file tracking service. This performs tracking file 
     ///     creation, updating and deleting on single project folders.
     /// </summary>
-    public interface ITrackingFileService
+    public interface IFileTrackingService
     {
         /// <summary>
         ///     Creates a new <see cref="TrackingFile"/> in a project folder.
@@ -44,18 +44,16 @@ namespace AbleSync.Core.Interfaces.Services
         ///     Marks a tracking file as <see cref="ProjectStatus.Invalid"/>.
         /// </summary>
         /// <param name="directoryInfo">The directory of the file.</param>
-        void MarkTrackingFileInvalidLocal(DirectoryInfo directoryInfo);
+        /// <returns><see cref="Task"/></returns>
+        TrackingFile MarkTrackingFileInvalid(DirectoryInfo directoryInfo);
 
         /// <summary>
-        ///     Marks a tracking file as scraped at the moment of execution.
+        ///     Updates a <see cref="TrackingFile"/> in a project folder based
+        ///     on the current state of the file and its <see cref="Project"/>.
         /// </summary>
-        /// <param name="directoryInfo">The directory of the file.</param>
-        void MarkProjectScraped(DirectoryInfo directoryInfo);
-
-        /// <summary>
-        ///     Marks a tracking file as analyzed at the moment of execution.
-        /// </summary>
-        /// <param name="directoryInfo">The directory of the file.</param>
-        void MarkProjectAnalyzed(DirectoryInfo directoryInfo);
+        /// <param name="directoryInfo">The respective directory.</param>
+        /// <param name="project">The tracking files project.</param>
+        /// <returns>The updated <see cref="TrackingFile"/>.</returns>
+        TrackingFile UpdateTrackingFile(DirectoryInfo directoryInfo, Project project);
     }
 }

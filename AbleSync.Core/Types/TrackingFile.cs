@@ -20,24 +20,18 @@ namespace AbleSync.Core.Types
         public DateTimeOffset TrackingFileDateCreated { get; set; }
 
         /// <summary>
-        ///     The update date of this tracking file.
+        ///     The creation date of the corresponding project in the store.
         /// </summary>
-        public DateTimeOffset? TrackingFileDateUpdated { get; set; }
+        public DateTimeOffset ProjectDateCreated { get; set; }
 
         /// <summary>
-        ///     The last moment this project was scraped.
+        ///     Represents the last moment this was updated and synced.
         /// </summary>
-        public DateTimeOffset ProjectDateScraped { get; set; }
+        public DateTimeOffset? DateUpdated { get; set; }
 
         /// <summary>
-        ///     The last moment this project was analyzed
-        ///     for which tasks should be executed.
+        ///     Indicates the status of this project.
         /// </summary>
-        public DateTimeOffset? ProjectDateAnalyzed { get; set; }
-
-        /// <summary>
-        ///     Indicates the status of this tracking file.
-        /// </summary>
-        public TrackingFileStatus TrackingFileStatus { get; set; }
+        public ProjectStatus ProjectStatus { get; set; }
     }
 }

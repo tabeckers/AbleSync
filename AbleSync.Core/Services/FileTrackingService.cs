@@ -17,7 +17,7 @@ namespace AbleSync.Core.Services
     /// <remarks>
     ///     This only operates locally and has no knowledge of any data store.
     /// </remarks>
-    public class TrackingFileService : ITrackingFileService
+    public class FileTrackingService : IFileTrackingService
     {
         /// <summary>
         ///     Creates a new tracking file.
@@ -49,13 +49,9 @@ namespace AbleSync.Core.Services
             var trackingFile = new TrackingFile
             {
                 ProjectId = projectId,
-                TrackingFileDateCreated = DateTimeOffset.Now,
-                ProjectDateScraped = DateTimeOffset.Now,
-                TrackingFileStatus = TrackingFileStatus.UpToDate
             };
 
             WriteToFile(directoryInfo, trackingFile);
-
             return trackingFile;
         }
 
@@ -146,7 +142,7 @@ namespace AbleSync.Core.Services
         /// </summary>
         /// <param name="directoryInfo">The directory of the file.</param>
         /// <returns><see cref="Task"/></returns>
-        public void MarkTrackingFileInvalidLocal(DirectoryInfo directoryInfo)
+        public TrackingFile MarkTrackingFileInvalid(DirectoryInfo directoryInfo)
         {
             if (directoryInfo == null)
             {
@@ -154,46 +150,38 @@ namespace AbleSync.Core.Services
             }
 
             var trackingFile = GetTrackingFile(directoryInfo);
-
-            trackingFile.TrackingFileStatus = TrackingFileStatus.InvalidLocal;
-
+            trackingFile.ProjectStatus = ProjectStatus.Invalid;
             OverwriteFile(directoryInfo, trackingFile);
+
+            return trackingFile;
         }
 
         /// <summary>
-        ///     Marks a tracking file as scraped at the moment of execution.
+        ///     Updates a <see cref="TrackingFile"/> in a project folder based
+        ///     on the current state of the file and its <see cref="Project"/>.
         /// </summary>
-        /// <param name="directoryInfo">The directory of the file.</param>
-        public void MarkProjectScraped(DirectoryInfo directoryInfo)
+        /// <param name="directoryInfo">The respective directory.</param>
+        /// <param name="project">The tracking files project.</param>
+        /// <returns>The updated <see cref="TrackingFile"/>.</returns>
+        public TrackingFile UpdateTrackingFile(DirectoryInfo directoryInfo, Project project)
         {
             if (directoryInfo == null)
             {
                 throw new ArgumentNullException(nameof(directoryInfo));
             }
-
-            var trackingFile = GetTrackingFile(directoryInfo);
-
-            trackingFile.ProjectDateScraped = DateTimeOffset.Now;
-
-            OverwriteFile(directoryInfo, trackingFile);
-        }
-
-        /// <summary>
-        ///     Marks a tracking file as analyzed at the moment of execution.
-        /// </summary>
-        /// <param name="directoryInfo">The directory of the file.</param>
-        public void MarkProjectAnalyzed(DirectoryInfo directoryInfo)
-        {
-            if (directoryInfo == null)
+            if (project == null)
             {
-                throw new ArgumentNullException(nameof(directoryInfo));
+                throw new ArgumentNullException(nameof(project));
             }
 
             var trackingFile = GetTrackingFile(directoryInfo);
-
-            trackingFile.ProjectDateAnalyzed = DateTimeOffset.Now;
+            trackingFile.ProjectStatus = project.ProjectStatus;
+            trackingFile.ProjectDateCreated = project.DateCreated;
+            trackingFile.DateUpdated = project.DateUpdated;
 
             OverwriteFile(directoryInfo, trackingFile);
+
+            return trackingFile;
         }
 
         /// <summary>
@@ -207,7 +195,6 @@ namespace AbleSync.Core.Services
             WriteToFile(directoryInfo, trackingFile);
         }
 
-        // TODO Move to helper
         /// <summary>
         ///     Actually writes a <see cref="TrackingFile"/> to file.
         /// </summary>

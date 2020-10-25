@@ -29,7 +29,7 @@ namespace AbleSync.Core.Extensions
             services.AddScoped<IProjectScrapingService, ProjectScrapingService>();
             services.AddScoped<IProjectAnalyzingService, ProjectAnalyzingService>();
             services.AddScoped<IProjectTaskExecuterService, ProjectTaskExecuterService>();
-            services.AddScoped<ITrackingFileService, TrackingFileService>();
+            services.AddScoped<IFileTrackingService, FileTrackingService>();
 
             // Add task executors
             services.AddScoped<UploadAudioExecuter>();

@@ -27,7 +27,7 @@ namespace AbleSync.Core.Services
     internal class ProjectAnalyzingService : IProjectAnalyzingService
     {
         protected readonly IProjectRepository _projectRepository;
-        protected readonly ITrackingFileService _fileTrackingService;
+        protected readonly IFileTrackingService _fileTrackingService;
         protected readonly QueueManager _queueManager;
         protected readonly AbleSyncOptions _options;
         protected readonly ILogger<ProjectAnalyzingService> _logger;
@@ -36,7 +36,7 @@ namespace AbleSync.Core.Services
         ///     Create new instance.
         /// </summary>
         public ProjectAnalyzingService(IProjectRepository projectRepository,
-            ITrackingFileService fileTrackingService,
+            IFileTrackingService fileTrackingService,
             QueueManager queueManager,
             IOptions<AbleSyncOptions> options,
             ILogger<ProjectAnalyzingService> logger)

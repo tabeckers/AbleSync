@@ -21,7 +21,7 @@ namespace AbleSync.Core.Services
     /// </remarks>
     public class ProjectScrapingService : IProjectScrapingService
     {
-        protected readonly ITrackingFileService _trackingFileService;
+        protected readonly IFileTrackingService _fileTrackingService;
         protected readonly IProjectRepository _projectRepository;
         protected readonly ILogger<ProjectScrapingService> _logger;
         protected readonly AbleSyncOptions _options;
@@ -29,12 +29,12 @@ namespace AbleSync.Core.Services
         /// <summary>
         ///     Create new instance.
         /// </summary>
-        public ProjectScrapingService(ITrackingFileService fileTrackingService,
+        public ProjectScrapingService(IFileTrackingService fileTrackingService,
             IProjectRepository projectRepository,
             ILogger<ProjectScrapingService> logger,
             IOptions<AbleSyncOptions> options)
         {
-            _trackingFileService = fileTrackingService ?? throw new ArgumentNullException(nameof(fileTrackingService));
+            _fileTrackingService = fileTrackingService ?? throw new ArgumentNullException(nameof(fileTrackingService));
             _projectRepository = projectRepository ?? throw new ArgumentNullException(nameof(projectRepository));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _options = options?.Value ?? throw new ArgumentNullException(nameof(options));
@@ -125,11 +125,11 @@ namespace AbleSync.Core.Services
                     throw new NotAnAbletonProjectFolderException();
                 }
 
-                if (_trackingFileService.HasTrackingFile(directoryInfo))
+                if (_fileTrackingService.HasTrackingFile(directoryInfo))
                 {
                     // If marked invalid, this service will log and skip.
-                    var trackingFile = _trackingFileService.GetTrackingFile(directoryInfo);
-                    if (trackingFile.TrackingFileStatus == TrackingFileStatus.InvalidLocal)
+                    var trackingFile = _fileTrackingService.GetTrackingFile(directoryInfo);
+                    if (trackingFile.ProjectStatus == ProjectStatus.Invalid)
                     {
                         _logger.LogWarning($"Project with id {trackingFile.ProjectId} marked as invalid, skipping");
                         return;
@@ -139,7 +139,7 @@ namespace AbleSync.Core.Services
                     {
                         // If the project has a tracking file but does not exist in the store, 
                         // we have reached an invalid state. This should never happen.
-                        _trackingFileService.MarkTrackingFileInvalidLocal(directoryInfo);
+                        _fileTrackingService.MarkTrackingFileInvalid(directoryInfo);
                         _logger.LogWarning($"Project with id {trackingFile.ProjectId} has a tracking file" +
                             $"but does not exist in the store - marked as invalid.");
                         return;
@@ -152,9 +152,10 @@ namespace AbleSync.Core.Services
                         var project = await _projectRepository.GetAsync(trackingFile.ProjectId, token);
 
                         project = await _projectRepository.MarkProjectAsScrapedAsync(trackingFile.ProjectId, token);
-                        _trackingFileService.MarkProjectScraped(directoryInfo);
+                        
+                        _fileTrackingService.UpdateTrackingFile(directoryInfo, project);
 
-                        _logger.LogTrace($"Project with id {trackingFile.ProjectId} has been scraped");
+                        _logger.LogTrace($"Project with id {trackingFile.ProjectId} has been updated");
                         return;
                     }
                 }
@@ -170,7 +171,7 @@ namespace AbleSync.Core.Services
 
                     // TODO Transaction?
                     var createdProjectId = await _projectRepository.CreateAsync(extractedProject, token);
-                    _trackingFileService.CreateTrackingFile(createdProjectId, directoryInfo);
+                    _fileTrackingService.CreateTrackingFile(createdProjectId, directoryInfo);
                     _logger.LogTrace($"A new tracking file has been created for project {createdProjectId} at {directoryInfo.FullName}");
 
                     return;
