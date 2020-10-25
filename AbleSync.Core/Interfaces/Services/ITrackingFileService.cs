@@ -1,8 +1,6 @@
-﻿using AbleSync.Core.Entities;
-using AbleSync.Core.Types;
+﻿using AbleSync.Core.Types;
 using System;
 using System.IO;
-using System.Threading.Tasks;
 
 namespace AbleSync.Core.Interfaces.Services
 {

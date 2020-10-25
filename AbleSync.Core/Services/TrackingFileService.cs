@@ -1,5 +1,4 @@
-﻿using AbleSync.Core.Entities;
-using AbleSync.Core.Exceptions;
+﻿using AbleSync.Core.Exceptions;
 using AbleSync.Core.Helpers;
 using AbleSync.Core.Interfaces.Services;
 using AbleSync.Core.Types;
