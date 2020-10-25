@@ -7,19 +7,14 @@ namespace AbleSync.Core.Helpers
     /// </summary>
     public static class PathHelper
     {
-        // TODO This was copied from internet and could use some work.
+        // FUTURE This can throw a uri format exception, might not be optimal.
         /// <summary>
         ///     Returns a relative path string from a full path based on a base path
-        ///     provided.
+        ///     provided. This returns no trailing slash.
         /// </summary>
-        /// <param name="fullPath">The path to convert. Can be either a file or a directory</param>
-        /// <param name="basePath">The base path on which relative processing is based. Should be a directory.</param>
-        /// <returns>
-        ///     String of the relative path.
-        /// 
-        ///     Examples of returned values:
-        ///     test.txt, ..\test.txt, ..\..\..\test.txt, ., .., subdir\test.txt
-        /// </returns>
+        /// <param name="fullPath">The directory path to convert.</param>
+        /// <param name="basePath">The base directory path.</param>
+        /// <returns>String of the relative path.</returns>
         public static string GetRelativePath(string fullPath, string basePath)
         {
             if (string.IsNullOrEmpty(fullPath))
@@ -31,19 +26,27 @@ namespace AbleSync.Core.Helpers
                 throw new ArgumentNullException(nameof(basePath));
             }
 
-            // Require trailing backslash for path
-            if (!basePath.EndsWith("\\", StringComparison.InvariantCulture))
+            // Remove all trailing slashes
+            while (fullPath.EndsWith("\\", StringComparison.InvariantCulture)
+                || fullPath.EndsWith("/", StringComparison.InvariantCulture))
             {
-                basePath += "\\";
+                fullPath = fullPath[0..^1];
             }
+            while (basePath.EndsWith("\\", StringComparison.InvariantCulture)
+                || basePath.EndsWith("/", StringComparison.InvariantCulture))
+            {
+                basePath = basePath[0..^1];
+            }
+
+            // Add trailing slashes
+            basePath += "/";
 
             var baseUri = new Uri(basePath);
             var fullUri = new Uri(fullPath);
 
             var relativeUri = baseUri.MakeRelativeUri(fullUri);
 
-            // Uri's use forward slashes so convert back to backward slashes
-            return relativeUri.ToString().Replace("/", "\\", StringComparison.InvariantCulture);
+            return relativeUri.ToString();
         }
     }
 }

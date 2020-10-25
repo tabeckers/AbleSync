@@ -1,5 +1,5 @@
-﻿using AbleSync.Core.Entities;
-using AbleSync.Core.Exceptions;
+﻿using AbleSync.Core.Exceptions;
+using AbleSync.Core.Extensions;
 using AbleSync.Core.Helpers;
 using AbleSync.Core.Interfaces.Services;
 using AbleSync.Core.Types;
@@ -76,7 +76,7 @@ namespace AbleSync.Core.Services
             }
 
             var trackingFile = GetTrackingFile(directoryInfo);
-            File.Delete($"{directoryInfo.FullName}/{trackingFile.ProjectId}{Constants.TrackingFileExtension}");
+            File.Delete($"{directoryInfo.FullPathFormatted()}/{trackingFile.ProjectId}{Constants.TrackingFileExtension}");
         }
 
         /// <summary>
@@ -110,7 +110,7 @@ namespace AbleSync.Core.Services
             var trackingFileName = trackingFileCandidates.First();
             var projectId = trackingFileName.Name.Replace(Constants.TrackingFileExtension, "", StringComparison.InvariantCulture);
 
-            var path = $"{directoryInfo.FullName}/{projectId}{Constants.TrackingFileExtension}";
+            var path = $"{directoryInfo.FullPathFormatted()}/{projectId}{Constants.TrackingFileExtension}";
             return FileHelper.GetFile<TrackingFile>(path);
         }
 
@@ -215,7 +215,7 @@ namespace AbleSync.Core.Services
         /// <param name="trackingFile">The tracking file to write.</param>
         private static void WriteToFile(DirectoryInfo directoryInfo, TrackingFile trackingFile)
         {
-            var path = $"{directoryInfo.FullName}/{trackingFile.ProjectId}{Constants.TrackingFileExtension}";
+            var path = $"{directoryInfo.FullPathFormatted()}/{trackingFile.ProjectId}{Constants.TrackingFileExtension}";
             using var stream = new FileStream(path, FileMode.Create);
 
             var formatter = new BinaryFormatter();
