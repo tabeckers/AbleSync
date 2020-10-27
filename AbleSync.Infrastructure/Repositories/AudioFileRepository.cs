@@ -300,6 +300,41 @@ namespace AbleSync.Infrastructure.Repositories
         }
 
         /// <summary>
+        ///     Gets the audiofiles from our data store ordered 
+        ///     by most recent update date.
+        /// </summary>
+        /// <param name="token">The cancellation token.</param>
+        /// <returns>Latest audio file collection.</returns>
+        public async IAsyncEnumerable<AudioFile> GetLatestAsync([EnumeratorCancellation] CancellationToken token)
+        {
+            if (token == null)
+            {
+                throw new ArgumentNullException(nameof(token));
+            }
+
+            var sql = @"
+                SELECT      id,
+                            project_id,
+                            name,
+                            audio_format,
+                            date_created,
+                            date_updated,
+                            date_synced
+                FROM        entities.audio_file
+                ORDER BY    date_updated DESC";
+
+            await using var connection = await _provider.OpenConnectionScopeAsync(token);
+            await using var command = _provider.CreateCommand(sql, connection);
+
+            await using var reader = await command.ExecuteReaderAsyncEnsureRowAsync();
+
+            while (await reader.ReadAsync(token))
+            {
+                yield return MapFromReader(reader);
+            }
+        }
+
+        /// <summary>
         ///     Marks the sync date of an audio file as now.
         /// </summary>
         /// <param name="id">The audio file id.</param>

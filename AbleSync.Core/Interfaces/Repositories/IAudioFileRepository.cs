@@ -1,6 +1,7 @@
 ﻿using AbleSync.Core.Entities;
 using AbleSync.Core.Types;
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -43,6 +44,14 @@ namespace AbleSync.Core.Interfaces.Repositories
         /// <param name="token">The cancellation token.</param>
         /// <returns>The audio file for the project and format.</returns>
         Task<AudioFile> GetFromProjectAsync(Guid projectId, AudioFormat format, CancellationToken token);
+
+        /// <summary>
+        ///     Gets the audiofiles from our data store ordered 
+        ///     by most recent update date.
+        /// </summary>
+        /// <param name="token">The cancellation token.</param>
+        /// <returns>Latest audio file collection.</returns>
+        IAsyncEnumerable<AudioFile> GetLatestAsync(CancellationToken token);
 
         /// <summary>
         ///     Marks the sync date of an audio file as now.

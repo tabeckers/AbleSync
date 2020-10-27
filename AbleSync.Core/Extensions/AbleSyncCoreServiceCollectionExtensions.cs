@@ -53,7 +53,7 @@ namespace AbleSync.Core.Extensions
             // TODO Look at service lifetimes.
 
             // Add services.
-            // TODO
+            services.AddScoped<IAudioFileService, AudioFileService>();
 
             return services;
         }

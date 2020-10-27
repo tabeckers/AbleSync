@@ -37,6 +37,7 @@ namespace AbleSync.Api
 
             // Configure AbleSync services.
             services.AddAbleSyncInfrastructureServices();
+            services.AddAbleSyncCoreServices();
 
             // Setup actual configuration.
             services.Configure<BlobStorageOptions>(options => _configuration.GetSection("BlobStorage").Bind(options));
