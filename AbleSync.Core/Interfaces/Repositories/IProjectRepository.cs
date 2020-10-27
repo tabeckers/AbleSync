@@ -11,7 +11,15 @@ namespace AbleSync.Core.Interfaces.Repositories
     ///     Repository for Ableton projects.
     /// </summary>
     public interface IProjectRepository : IRepositoryBaseCRUD<Project>
-    { 
+    {
+        /// <summary>
+        ///     Gets the projects from our data store ordered 
+        ///     by most recent update date.
+        /// </summary>
+        /// <param name="token">The cancellation token.</param>
+        /// <returns>Latest project collection.</returns>
+        IAsyncEnumerable<Project> GetLatestAsync(CancellationToken token);
+
         /// <summary>
         ///     Marks a project as scraped by setting it's update date.
         /// </summary>

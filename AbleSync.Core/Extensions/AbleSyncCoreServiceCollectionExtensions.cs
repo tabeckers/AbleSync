@@ -11,12 +11,13 @@ namespace AbleSync.Core.Extensions
     /// </summary>
     public static class AbleSyncCoreServiceCollectionExtensions
     {
+        // TODO Move
         /// <summary>
         ///     Adds all our infrastructure services to the container.
         /// </summary>
         /// <param name="services">The <see cref="IServiceCollection"/> to add the services to.</param>
         /// <returns>Same as <paramref name="services"/>.</returns>
-        public static IServiceCollection AddAbleSyncCoreServices(this IServiceCollection services)
+        public static IServiceCollection AddAbleSyncBackgroundWorkerServices(this IServiceCollection services)
         {
             if (services == null)
             {
@@ -33,6 +34,26 @@ namespace AbleSync.Core.Extensions
 
             // Add task executors
             services.AddScoped<UploadAudioExecuter>();
+
+            return services;
+        }
+
+        /// <summary>
+        ///     Adds all our infrastructure services to the container.
+        /// </summary>
+        /// <param name="services">The <see cref="IServiceCollection"/> to add the services to.</param>
+        /// <returns>Same as <paramref name="services"/>.</returns>
+        public static IServiceCollection AddAbleSyncCoreServices(this IServiceCollection services)
+        {
+            if (services == null)
+            {
+                throw new ArgumentNullException(nameof(services));
+            }
+
+            // TODO Look at service lifetimes.
+
+            // Add services.
+            // TODO
 
             return services;
         }

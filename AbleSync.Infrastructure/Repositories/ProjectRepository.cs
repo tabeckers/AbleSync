@@ -183,6 +183,41 @@ namespace AbleSync.Infrastructure.Repositories
             return MapFromReader(reader);
         }
 
+        /// <summary>
+        ///     Gets the projects from our data store ordered 
+        ///     by most recent update date.
+        /// </summary>
+        /// <param name="token">The cancellation token.</param>
+        /// <returns>Latest project collection.</returns>
+        public async IAsyncEnumerable<Project> GetLatestAsync([EnumeratorCancellation] CancellationToken token)
+        {
+            if (token == null)
+            {
+                throw new ArgumentNullException(nameof(token));
+            }
+
+            var sql = @"
+                SELECT      id,
+                            name,
+                            artist_id,
+                            relative_path,
+                            date_created,
+                            date_updated,
+                            project_status
+                FROM        entities.project
+                ORDER BY    date_updated DESC";
+
+            await using var connection = await _provider.OpenConnectionScopeAsync(token);
+            await using var command = _provider.CreateCommand(sql, connection);
+
+            await using var reader = await command.ExecuteReaderAsync(token);
+
+            while (await reader.ReadAsync(token))
+            {
+                yield return MapFromReader(reader);
+            }
+        }
+
         // TODO Maybe add a separate column for scrape dates?
         /// <summary>
         ///     Mark a project as scraped by settings its update
@@ -289,6 +324,5 @@ namespace AbleSync.Infrastructure.Repositories
             command.AddParameterWithValue("name", project.Name);
             command.AddParameterWithValue("relative_path", project.RelativePath);
         }
-
     }
 }
