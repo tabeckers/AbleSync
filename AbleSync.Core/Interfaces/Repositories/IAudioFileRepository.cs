@@ -51,7 +51,7 @@ namespace AbleSync.Core.Interfaces.Repositories
         /// </summary>
         /// <param name="token">The cancellation token.</param>
         /// <returns>Latest audio file collection.</returns>
-        IAsyncEnumerable<AudioFile> GetLatestAsync(CancellationToken token);
+        IAsyncEnumerable<AudioFile> GetLatestAsync(Pagination pagination, CancellationToken token);
 
         /// <summary>
         ///     Marks the sync date of an audio file as now.
@@ -59,5 +59,14 @@ namespace AbleSync.Core.Interfaces.Repositories
         /// <param name="id">The audio file id.</param>
         /// <param name="token">The cancellation token.</param>
         Task MarkSyncedAsync(Guid id, CancellationToken token);
+
+        /// <summary>
+        ///     Search by a query in our data store for audio files.
+        /// </summary>
+        /// <param name="query">The search term.</param>
+        /// <param name="pagination">The pagination.</param>
+        /// <param name="token">The cancellation token.</param>
+        /// <returns>Search result audio file collection.</returns>
+        IAsyncEnumerable<AudioFile> SearchAsync(string query, Pagination pagination, CancellationToken token);
     }
 }

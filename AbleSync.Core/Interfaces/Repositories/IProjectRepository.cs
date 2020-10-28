@@ -18,7 +18,7 @@ namespace AbleSync.Core.Interfaces.Repositories
         /// </summary>
         /// <param name="token">The cancellation token.</param>
         /// <returns>Latest project collection.</returns>
-        IAsyncEnumerable<Project> GetLatestAsync(CancellationToken token);
+        IAsyncEnumerable<Project> GetLatestAsync(Pagination pagination, CancellationToken token);
 
         /// <summary>
         ///     Marks a project as scraped by setting it's update date.
@@ -36,5 +36,14 @@ namespace AbleSync.Core.Interfaces.Repositories
         /// <param name="token">The cancellation token.</param>
         /// <returns>The <see cref="Project"/> after the status update.</returns>
         Task<Project> MarkProjectAsync(Guid id, ProjectStatus status, CancellationToken token);
+
+        /// <summary>
+        ///     Search by a query in our data store for projects.
+        /// </summary>
+        /// <param name="query">The search term.</param>
+        /// <param name="pagination">The pagination.</param>
+        /// <param name="token">The cancellation token.</param>
+        /// <returns>Search result project collection.</returns>
+        IAsyncEnumerable<Project> SearchAsync(string query, Pagination pagination, CancellationToken token);
     }
 }

@@ -1,4 +1,5 @@
 ﻿using AbleSync.Core.Entities;
+using AbleSync.Core.Types;
 using System;
 using System.Collections.Generic;
 using System.Threading;
@@ -24,7 +25,7 @@ namespace AbleSync.Core.Interfaces.Services
         /// </summary>
         /// <param name="token">The cancellation token.</param>
         /// <returns>Collection of all audio files.</returns>
-        IAsyncEnumerable<AudioFile> GetAllAsync(CancellationToken token);
+        IAsyncEnumerable<AudioFile> GetAllAsync(Pagination pagination, CancellationToken token);
 
         /// <summary>
         ///     Gets an audio file from our data store.
@@ -40,13 +41,22 @@ namespace AbleSync.Core.Interfaces.Services
         /// <param name="projectId">The respective project id.</param>
         /// <param name="token">The cancellation token.</param>
         /// <returns>All audio files that belong to the project id.</returns>
-        IAsyncEnumerable<AudioFile> GetForProjectAsync(Guid projectId, CancellationToken token);
+        IAsyncEnumerable<AudioFile> GetForProjectAsync(Guid projectId, Pagination pagination, CancellationToken token);
 
         /// <summary>
         ///     Gets all latest updated audio files.
         /// </summary>
         /// <param name="token">The cancellation token.</param>
         /// <returns>Collection of the latest updated audio files.</returns>
-        IAsyncEnumerable<AudioFile> GetLastestAsync(CancellationToken token);
+        IAsyncEnumerable<AudioFile> GetLastestAsync(Pagination pagination, CancellationToken token);
+
+        /// <summary>
+        ///     Search by a query in our data store for audio files.
+        /// </summary>
+        /// <param name="query">The search term.</param>
+        /// <param name="pagination">The pagination.</param>
+        /// <param name="token">The cancellation token.</param>
+        /// <returns>Search result audio file collection.</returns>
+        IAsyncEnumerable<AudioFile> SearchAsync(string query, Pagination pagination, CancellationToken token);
     }
 }
