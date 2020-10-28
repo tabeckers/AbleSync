@@ -4,6 +4,7 @@ using AbleSync.Core.Interfaces.Repositories;
 using AbleSync.Core.Types;
 using AbleSync.Infrastructure.Extensions;
 using AbleSync.Infrastructure.Provider;
+using RenameMe.Utility.Extensions;
 using System;
 using System.Collections.Generic;
 using System.Data.Common;
@@ -80,11 +81,12 @@ namespace AbleSync.Infrastructure.Repositories
         /// <param name="projectId">The project id.</param>
         /// <param name="token">The cancellation token.</param>
         /// <returns>Collection of <see cref="Project"/>s.</returns>
-        public async IAsyncEnumerable<ProjectTask> GetAllForProjectAsync(Guid projectId, [EnumeratorCancellation] CancellationToken token)
+        public async IAsyncEnumerable<ProjectTask> GetAllForProjectAsync(Guid projectId, Pagination pagination, [EnumeratorCancellation] CancellationToken token)
         {
-            if (projectId == null || projectId == Guid.Empty)
+            projectId.ThrowIfNullOrEmpty();
+            if (pagination == null)
             {
-                throw new ArgumentNullException(nameof(projectId));
+                throw new ArgumentNullException(nameof(pagination));
             }
             if (token == null)
             {
@@ -102,6 +104,8 @@ namespace AbleSync.Infrastructure.Repositories
                         task_parameter
                 FROM    entities.project_task
                 WHERE   project_id = @project_id";
+
+            DbCommandExtensions.AddPagination(ref sql, pagination);
 
             await using var connection = await _provider.OpenConnectionScopeAsync(token);
             await using var command = _provider.CreateCommand(sql, connection);
@@ -201,8 +205,12 @@ namespace AbleSync.Infrastructure.Repositories
         /// </summary>
         /// <param name="token">The cancellation token.</param>
         /// <returns>Collection of project tasks.</returns>
-        public override async IAsyncEnumerable<ProjectTask> GetAllAsync([EnumeratorCancellation] CancellationToken token)
+        public override async IAsyncEnumerable<ProjectTask> GetAllAsync(Pagination pagination, [EnumeratorCancellation] CancellationToken token)
         {
+            if (pagination == null)
+            {
+                throw new ArgumentNullException(nameof(pagination));
+            }
             if (token == null)
             {
                 throw new ArgumentNullException(nameof(token));
@@ -218,6 +226,8 @@ namespace AbleSync.Infrastructure.Repositories
                         project_task_type,
                         task_parameter
                 FROM    entities.project_task";
+
+            DbCommandExtensions.AddPagination(ref sql, pagination);
 
             await using var connection = await _provider.OpenConnectionScopeAsync(token);
             await using var command = _provider.CreateCommand(sql, connection);

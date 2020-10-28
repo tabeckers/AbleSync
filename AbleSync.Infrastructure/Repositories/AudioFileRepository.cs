@@ -183,8 +183,12 @@ namespace AbleSync.Infrastructure.Repositories
         /// </summary>
         /// <param name="token">The cancellation token.</param>
         /// <returns>Collection of projects.</returns>
-        public override async IAsyncEnumerable<AudioFile> GetAllAsync([EnumeratorCancellation] CancellationToken token)
+        public override async IAsyncEnumerable<AudioFile> GetAllAsync(Pagination pagination, [EnumeratorCancellation] CancellationToken token)
         {
+            if (pagination == null)
+            {
+                throw new ArgumentNullException(nameof(pagination));
+            }
             if (token == null)
             {
                 throw new ArgumentNullException(nameof(token));
@@ -199,6 +203,8 @@ namespace AbleSync.Infrastructure.Repositories
                         date_updated,
                         date_synced
                 FROM    entities.audio_file";
+
+            DbCommandExtensions.AddPagination(ref sql, pagination);
 
             await using var connection = await _provider.OpenConnectionScopeAsync(token);
             await using var command = _provider.CreateCommand(sql, connection);
@@ -305,11 +311,15 @@ namespace AbleSync.Infrastructure.Repositories
         /// </summary>
         /// <param name="token">The cancellation token.</param>
         /// <returns>Latest audio file collection.</returns>
-        public async IAsyncEnumerable<AudioFile> GetLatestAsync([EnumeratorCancellation] CancellationToken token)
+        public async IAsyncEnumerable<AudioFile> GetLatestAsync(Pagination pagination, [EnumeratorCancellation] CancellationToken token)
         {
             if (token == null)
             {
                 throw new ArgumentNullException(nameof(token));
+            }
+            if (pagination == null)
+            {
+                throw new ArgumentNullException(nameof(pagination));
             }
 
             var sql = @"
@@ -322,6 +332,8 @@ namespace AbleSync.Infrastructure.Repositories
                             date_synced
                 FROM        entities.audio_file
                 ORDER BY    date_updated DESC";
+
+            DbCommandExtensions.AddPagination(ref sql, pagination);
 
             await using var connection = await _provider.OpenConnectionScopeAsync(token);
             await using var command = _provider.CreateCommand(sql, connection);
@@ -361,6 +373,51 @@ namespace AbleSync.Infrastructure.Repositories
             if (affected == 0)
             {
                 throw new EntityNotFoundException(nameof(AudioFile));
+            }
+        }
+
+        /// <summary>
+        ///     Search by a query in our data store for audio files.
+        /// </summary>
+        /// <param name="query">The search term.</param>
+        /// <param name="pagination">The pagination.</param>
+        /// <param name="token">The cancellation token.</param>
+        /// <returns>Search result audio file collection.</returns>
+        public async IAsyncEnumerable<AudioFile> SearchAsync(string query, Pagination pagination, [EnumeratorCancellation] CancellationToken token)
+        {
+            query.ThrowIfNullOrEmpty();
+            if (pagination == null)
+            {
+                throw new ArgumentNullException(nameof(pagination));
+            }
+            if (token == null)
+            {
+                throw new ArgumentNullException(nameof(token));
+            }
+
+            var sql = @"
+                SELECT  id,
+                        project_id,
+                        name,
+                        audio_format,
+                        date_created,
+                        date_updated,
+                        date_synced
+                FROM    entities.audio_file
+                WHERE   lower(name) LIKE lower(@query)";
+
+            DbCommandExtensions.AddPagination(ref sql, pagination);
+
+            await using var connection = await _provider.OpenConnectionScopeAsync(token);
+            await using var command = _provider.CreateCommand(sql, connection);
+
+            command.AddParameterWithValue("query", $"%{query}%");
+
+            await using var reader = await command.ExecuteReaderAsync(token);
+
+            while (await reader.ReadAsync(token))
+            {
+                yield return MapFromReader(reader);
             }
         }
 

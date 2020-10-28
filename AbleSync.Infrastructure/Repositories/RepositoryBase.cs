@@ -1,5 +1,6 @@
 ﻿using AbleSync.Core.Entities;
 using AbleSync.Core.Interfaces.Repositories;
+using AbleSync.Core.Types;
 using AbleSync.Infrastructure.Provider;
 using System;
 using System.Collections.Generic;
@@ -66,7 +67,7 @@ namespace AbleSync.Infrastructure.Repositories
         /// </summary>
         /// <param name="token">The cancellation token.</param>
         /// <returns>Collection of entities.</returns>
-        public abstract IAsyncEnumerable<TEntity> GetAllAsync(CancellationToken token);
+        public abstract IAsyncEnumerable<TEntity> GetAllAsync(Pagination pagination, CancellationToken token);
 
         /// <summary>
         ///     Gets an entity from our data store.
