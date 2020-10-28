@@ -115,8 +115,12 @@ namespace AbleSync.Infrastructure.Repositories
         /// </summary>
         /// <param name="token">The cancellation token.</param>
         /// <returns>Collection of projects.</returns>
-        public override async IAsyncEnumerable<Project> GetAllAsync([EnumeratorCancellation] CancellationToken token)
+        public override async IAsyncEnumerable<Project> GetAllAsync(Pagination pagination, [EnumeratorCancellation] CancellationToken token)
         {
+            if (pagination == null)
+            {
+                throw new ArgumentNullException(nameof(pagination));
+            }
             if (token == null)
             {
                 throw new ArgumentNullException(nameof(token));
@@ -132,10 +136,12 @@ namespace AbleSync.Infrastructure.Repositories
                         project_status
                 FROM    entities.project";
 
+            DbCommandExtensions.AddPagination(ref sql, pagination);
+
             await using var connection = await _provider.OpenConnectionScopeAsync(token);
             await using var command = _provider.CreateCommand(sql, connection);
 
-            await using var reader = await command.ExecuteReaderAsync();
+            await using var reader = await command.ExecuteReaderAsync(token);
 
             while (await reader.ReadAsync(token))
             {
@@ -181,6 +187,47 @@ namespace AbleSync.Infrastructure.Repositories
             await reader.ReadAsync(token);
 
             return MapFromReader(reader);
+        }
+
+        /// <summary>
+        ///     Gets the projects from our data store ordered 
+        ///     by most recent update date.
+        /// </summary>
+        /// <param name="token">The cancellation token.</param>
+        /// <returns>Latest project collection.</returns>
+        public async IAsyncEnumerable<Project> GetLatestAsync(Pagination pagination, [EnumeratorCancellation] CancellationToken token)
+        {
+            if (pagination == null)
+            {
+                throw new ArgumentNullException(nameof(pagination));
+            }
+            if (token == null)
+            {
+                throw new ArgumentNullException(nameof(token));
+            }
+
+            var sql = @"
+                SELECT      id,
+                            name,
+                            artist_id,
+                            relative_path,
+                            date_created,
+                            date_updated,
+                            project_status
+                FROM        entities.project
+                ORDER BY    date_updated DESC";
+
+            DbCommandExtensions.AddPagination(ref sql, pagination);
+
+            await using var connection = await _provider.OpenConnectionScopeAsync(token);
+            await using var command = _provider.CreateCommand(sql, connection);
+
+            await using var reader = await command.ExecuteReaderAsync(token);
+
+            while (await reader.ReadAsync(token))
+            {
+                yield return MapFromReader(reader);
+            }
         }
 
         // TODO Maybe add a separate column for scrape dates?
@@ -290,5 +337,49 @@ namespace AbleSync.Infrastructure.Repositories
             command.AddParameterWithValue("relative_path", project.RelativePath);
         }
 
+        /// <summary>
+        ///     Search by a query in our data store for projects.
+        /// </summary>
+        /// <param name="query">The search term.</param>
+        /// <param name="pagination">The pagination.</param>
+        /// <param name="token">The cancellation token.</param>
+        /// <returns>Search result project collection.</returns>
+        public async IAsyncEnumerable<Project> SearchAsync(string query, Pagination pagination, [EnumeratorCancellation] CancellationToken token)
+        {
+            query.ThrowIfNullOrEmpty();
+            if (pagination == null)
+            {
+                throw new ArgumentNullException(nameof(pagination));
+            }
+            if (token == null)
+            {
+                throw new ArgumentNullException(nameof(token));
+            }
+
+            var sql = @"
+                SELECT  id,
+                        name,
+                        artist_id,
+                        relative_path,
+                        date_created,
+                        date_updated,
+                        project_status
+                FROM    entities.project
+                WHERE   lower(name) LIKE lower(@query)";
+
+            DbCommandExtensions.AddPagination(ref sql, pagination);
+
+            await using var connection = await _provider.OpenConnectionScopeAsync(token);
+            await using var command = _provider.CreateCommand(sql, connection);
+
+            command.AddParameterWithValue("query", $"%{query}%");
+
+            await using var reader = await command.ExecuteReaderAsync(token);
+
+            while (await reader.ReadAsync(token))
+            {
+                yield return MapFromReader(reader);
+            }
+        }
     }
 }

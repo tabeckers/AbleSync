@@ -18,7 +18,7 @@ namespace AbleSync.Core.Interfaces.Repositories
         /// <param name="projectId">The project id.</param>
         /// <param name="token">The cancellation token.</param>
         /// <returns>Collection of <see cref="Project"/>s.</returns>
-        IAsyncEnumerable<ProjectTask> GetAllForProjectAsync(Guid projectId, CancellationToken token);
+        IAsyncEnumerable<ProjectTask> GetAllForProjectAsync(Guid projectId, Pagination pagination, CancellationToken token);
 
         /// <summary>
         ///     Marks the status of a <see cref="ProjectTask"/>.

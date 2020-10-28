@@ -73,10 +73,10 @@ namespace AbleSync.Infrastructure.Storage
         /// <summary>
         ///     Checks if a file exists or not.
         /// </summary>
-        /// <param name="containerName">The container name.</param>
+        /// <param name="directoryName">The container name.</param>
         /// <param name="fileName">The file name.</param>
         /// <returns>Boolean result.</returns>
-        public async Task<bool> FileExistsAsync(string containerName, string fileName, CancellationToken token)
+        public async Task<bool> FileExistsAsync(string directoryName, string fileName, CancellationToken token)
         { 
             fileName.ThrowIfNullOrEmpty();
 
@@ -87,7 +87,7 @@ namespace AbleSync.Infrastructure.Storage
                 var result = await client.GetObjectAsync(new Amazon.S3.Model.GetObjectRequest
                 {
                     BucketName = _options.BlobStorageName,
-                    Key = string.IsNullOrEmpty(containerName) ? fileName : $"{WithTrailingSlash(containerName)}{fileName}"
+                    Key = string.IsNullOrEmpty(directoryName) ? fileName : $"{WithTrailingSlash(directoryName)}{fileName}"
                 }, token);
 
                 return true;
@@ -112,15 +112,33 @@ namespace AbleSync.Infrastructure.Storage
         /// <remarks>
         ///     The default <paramref name="accessType"/> is read.
         /// </remarks>
-        /// <param name="containerName">The container name.</param>
+        /// <param name="directoryName">The container name.</param>
         /// <param name="fileName">The file name.</param>
         /// <param name="hoursValid">How many hours the link should be valid.</param>
         /// <param name="accessType">Indicates what we want to do with the link.</param>
         /// <returns>Access <see cref="Uri"/>.</returns>
-        public Task<Uri> GetAccessUriAsync(string containerName, string fileName, double hoursValid, FileAccessType fileAccesType, CancellationToken token)
+        public Task<Uri> GetAccessUriAsync(string directoryName, string fileName, double hoursValid, FileAccessType fileAccessType, CancellationToken token)
+            => GetAccessUriOverrideFilenameAsync(directoryName, fileName, fileName, hoursValid, fileAccessType, token);
+
+        /// <summary>
+        ///     Gets an access uri to upload or access a file. This will then
+        ///     change the name of the downloaded file to <paramref name="overrideFileName"/>.
+        /// </summary>
+        /// <remarks>
+        ///     This can be used to add the file extension.
+        /// </remarks>
+        /// <param name="directoryName">The directory in which the file should exist.</param>
+        /// <param name="fileName">The name of the file to access.</param>
+        /// <param name="overrideFileName">The overrided file name.</param>
+        /// <param name="hoursValid">How long the uri should be valid.</param>
+        /// <param name="fileAccessType">What we want to do with the file.</param>
+        /// <param name="token">The cancellation token.</param>
+        /// <returns></returns>
+        public Task<Uri> GetAccessUriOverrideFilenameAsync(string directoryName, string fileName, string overrideFileName, double hoursValid, FileAccessType fileAccessType, CancellationToken token)
         {
-            containerName.ThrowIfNullOrEmpty();
+            directoryName.ThrowIfNullOrEmpty();
             fileName.ThrowIfNullOrEmpty();
+            overrideFileName.ThrowIfNullOrEmpty();
             if (hoursValid <= 0)
             {
                 throw new ArgumentOutOfRangeException(nameof(hoursValid));
@@ -130,18 +148,24 @@ namespace AbleSync.Infrastructure.Storage
 
             try
             {
-                var uri = new Uri(client.GetPreSignedURL(new GetPreSignedUrlRequest
+                var request = new GetPreSignedUrlRequest
                 {
                     BucketName = _options.BlobStorageName,
-                    //Key = string.IsNullOrEmpty(containerName) ? fileName : $"{WithTrailingSlash(containerName)}{fileName}",
+                    Key = string.IsNullOrEmpty(directoryName) ? fileName : $"{WithTrailingSlash(directoryName)}{fileName}",
                     Expires = DateTime.UtcNow.AddHours(hoursValid),
-                    Verb = fileAccesType switch
+                    Verb = fileAccessType switch
                     {
                         FileAccessType.Read => HttpVerb.GET,
                         FileAccessType.Write => HttpVerb.PUT,
-                        _ => throw new InvalidOperationException(nameof(fileAccesType))
-                    }
-                }));
+                        _ => throw new InvalidOperationException(nameof(fileAccessType))
+                    },
+
+                };
+
+                // Override the download file name.
+                request.ResponseHeaderOverrides.ContentDisposition = $"attachment; filename={overrideFileName}";
+
+                var uri = new Uri(client.GetPreSignedURL(request));
 
                 return Task.FromResult(uri);
             }

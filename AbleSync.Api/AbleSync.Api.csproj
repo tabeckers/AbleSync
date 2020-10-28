@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="AutoMapper" Version="10.1.1" />
+    <PackageReference Include="AutoMapper.Extensions.Microsoft.DependencyInjection" Version="8.1.0" />
+    <PackageReference Include="Microsoft.Extensions.Configuration" Version="3.1.9" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\AbleSync.Core\AbleSync.Core.csproj" />
+    <ProjectReference Include="..\AbleSync.Infrastructure\AbleSync.Infrastructure.csproj" />
+    <ProjectReference Include="..\RenameMe.Utility\RenameMe.Utility.csproj" />
+  </ItemGroup>
+
+</Project>

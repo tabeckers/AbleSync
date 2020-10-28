@@ -1,6 +1,7 @@
 ﻿using AbleSync.Core.Entities;
 using AbleSync.Core.Types;
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -45,10 +46,27 @@ namespace AbleSync.Core.Interfaces.Repositories
         Task<AudioFile> GetFromProjectAsync(Guid projectId, AudioFormat format, CancellationToken token);
 
         /// <summary>
+        ///     Gets the audiofiles from our data store ordered 
+        ///     by most recent update date.
+        /// </summary>
+        /// <param name="token">The cancellation token.</param>
+        /// <returns>Latest audio file collection.</returns>
+        IAsyncEnumerable<AudioFile> GetLatestAsync(Pagination pagination, CancellationToken token);
+
+        /// <summary>
         ///     Marks the sync date of an audio file as now.
         /// </summary>
         /// <param name="id">The audio file id.</param>
         /// <param name="token">The cancellation token.</param>
         Task MarkSyncedAsync(Guid id, CancellationToken token);
+
+        /// <summary>
+        ///     Search by a query in our data store for audio files.
+        /// </summary>
+        /// <param name="query">The search term.</param>
+        /// <param name="pagination">The pagination.</param>
+        /// <param name="token">The cancellation token.</param>
+        /// <returns>Search result audio file collection.</returns>
+        IAsyncEnumerable<AudioFile> SearchAsync(string query, Pagination pagination, CancellationToken token);
     }
 }

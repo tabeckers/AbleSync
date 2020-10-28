@@ -1,4 +1,6 @@
 ﻿using AbleSync.Core.Exceptions;
+using AbleSync.Core.Types;
+using RenameMe.Utility.Extensions;
 using System;
 using System.Data.Common;
 using System.Globalization;
@@ -12,6 +14,35 @@ namespace AbleSync.Infrastructure.Extensions
     /// </summary>
     internal static class DbCommandExtensions
     {
+        // TODO Add order by as well
+        /// <summary>
+        ///     Appends pagination to our sql command. Call this after
+        ///     creating the entire SQL text.
+        /// </summary>
+        /// <remarks>
+        ///     The <see cref="Pagination"/>
+        /// </remarks>
+        /// <param name="sql">The sql command text to append to.</param>
+        /// <param name="pagination">The pagination.</param>
+        public static void AddPagination(ref string sql, Pagination pagination)
+        {
+            sql.ThrowIfNullOrEmpty();
+            if (pagination == null)
+            {
+                throw new ArgumentNullException(nameof(pagination));
+            }
+
+            if (pagination.ItemsPerPage > 0)
+            {
+                sql += $"\n\tLIMIT {pagination.ItemsPerPage}";
+            }
+
+            if (pagination.Page > 0)
+            {
+                sql += $"\n\tOFFSET {pagination.Page}";
+            }
+        }
+
         /// <summary>
         ///     Add parameter with key and value to command.
         /// </summary>

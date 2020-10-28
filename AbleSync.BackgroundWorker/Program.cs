@@ -66,7 +66,7 @@ namespace AbleSync.BackgroundWorker
         private static void ConfigureServices(IServiceCollection services, IConfiguration configuration)
         {
             // Add required services.
-            services.AddAbleSyncCoreServices();
+            services.AddAbleSyncBackgroundWorkerServices();
             services.AddAbleSyncInfrastructureServices();
 
             services.AddOptions();
