@@ -100,7 +100,7 @@ namespace AbleSync.Core.Services
                 throw new ArgumentNullException(nameof(token));
             }
 
-            await foreach (var project in _projectRepository.GetAllAsync(token))
+            await foreach (var project in _projectRepository.GetAllAsync(Pagination.All, token))
             {
                 await AnalyzeProjectEnqueueTasksAsync(project.Id, token);
             }

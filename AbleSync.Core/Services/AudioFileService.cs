@@ -45,9 +45,12 @@ namespace AbleSync.Core.Services
             }
 
             var audioFile = await _audioFileRepository.GetAsync(audioFileId, token);
-            var uri = await _blobStorageService.GetAccessUriAsync(
+            var downloadFileName = $"{audioFileId}{FileNameHelper.ToExtension(audioFile.AudioFormat)}";
+
+            var uri = await _blobStorageService.GetAccessUriOverrideFilenameAsync(
                 FileStorageHelper.AudioFileFolder(audioFile.ProjectId),
                 audioFileId.ToString(),
+                downloadFileName,
                 1, // TODO From config
                 Types.FileAccessType.Read, 
                 token);
@@ -60,8 +63,8 @@ namespace AbleSync.Core.Services
         /// </summary>
         /// <param name="token">The cancellation token.</param>
         /// <returns>Collection of all audio files.</returns>
-        public IAsyncEnumerable<AudioFile> GetAllAsync(CancellationToken token)
-            => _audioFileRepository.GetAllAsync(token);
+        public IAsyncEnumerable<AudioFile> GetAllAsync(Pagination pagination, CancellationToken token)
+            => _audioFileRepository.GetAllAsync(pagination, token);
 
         /// <summary>
         ///     Gets an audio file from our data store.
@@ -72,6 +75,7 @@ namespace AbleSync.Core.Services
         public Task<AudioFile> GetAsync(Guid audioFileId, CancellationToken token)
             => _audioFileRepository.GetAsync(audioFileId, token);
 
+        // TODO This gets a single item.
         // TODO Audio format.
         // TODO ToAsyncEnumerable?
         /// <summary>
@@ -80,7 +84,7 @@ namespace AbleSync.Core.Services
         /// <param name="projectId">The respective project id.</param>
         /// <param name="token">The cancellation token.</param>
         /// <returns>All audio files that belong to the project id.</returns>
-        public IAsyncEnumerable<AudioFile> GetForProjectAsync(Guid projectId, CancellationToken token)
+        public IAsyncEnumerable<AudioFile> GetForProjectAsync(Guid projectId, Pagination pagination, CancellationToken token)
             => _audioFileRepository.GetFromProjectAsync(projectId, AudioFormat.Mp3, token).ToAsyncEnumerable();
 
         /// <summary>
@@ -88,7 +92,24 @@ namespace AbleSync.Core.Services
         /// </summary>
         /// <param name="token">The cancellation token.</param>
         /// <returns>Collection of the latest updated audio files.</returns>
-        public IAsyncEnumerable<AudioFile> GetLastestAsync(CancellationToken token)
-            => _audioFileRepository.GetLatestAsync(token);
+        public IAsyncEnumerable<AudioFile> GetLastestAsync(Pagination pagination, CancellationToken token)
+            => _audioFileRepository.GetLatestAsync(pagination, token);
+
+        /// <summary>
+        ///     Search by a query in our data store for audio files.
+        /// </summary>
+        /// <param name="query">The search term.</param>
+        /// <param name="pagination">The pagination.</param>
+        /// <param name="token">The cancellation token.</param>
+        /// <returns>Search result audio file collection.</returns>
+        public IAsyncEnumerable<AudioFile> SearchAsync(string query, Pagination pagination, CancellationToken token)
+        {
+            query.ThrowIfNullOrEmpty();
+            if (query.Length < 3) {
+                throw new ArgumentException("Search query must be at least 3 characters long");
+            }
+
+            return _audioFileRepository.SearchAsync(query, pagination, token);
+        }
     }
 }
