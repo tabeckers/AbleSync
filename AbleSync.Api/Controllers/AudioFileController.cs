@@ -1,6 +1,6 @@
 ﻿using AbleSync.Api.DataTransferObjects;
-using AbleSync.Core.Interfaces.Repositories;
 using AbleSync.Core.Interfaces.Services;
+using AbleSync.Core.Types;
 using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
 using RenameMe.Utility.Extensions;
@@ -73,12 +73,12 @@ namespace AbleSync.Api.Controllers
         ///     Gets all audio files from our data store.
         /// </summary>
         /// <returns>Collection of audio files.</returns>
-        [HttpGet("all")]      
+        [HttpGet("all")]
         public async Task<IActionResult> GetAllAudioFilesAsync()
         {
-            // Map.
+            // Act and map.
             var result = new List<AudioFileDTO>();
-            await foreach (var audioFile in _audioFileService.GetLastestAsync(HttpContext.RequestAborted))
+            await foreach (var audioFile in _audioFileService.GetLastestAsync(Pagination.Default, HttpContext.RequestAborted))
             {
                 result.Add(_mapper.Map<AudioFileDTO>(audioFile));
             }
@@ -96,9 +96,53 @@ namespace AbleSync.Api.Controllers
         [HttpGet("latest")]
         public async Task<IActionResult> GetLatestAudioFilesAsync()
         {
-            // Map.
+            // Act and map.
             var result = new List<AudioFileDTO>();
-            await foreach (var audioFile in _audioFileService.GetLastestAsync(HttpContext.RequestAborted))
+            await foreach (var audioFile in _audioFileService.GetLastestAsync(Pagination.Default, HttpContext.RequestAborted))
+            {
+                result.Add(_mapper.Map<AudioFileDTO>(audioFile));
+            }
+
+            // Return.
+            return Ok(result);
+        }
+
+        /// <summary>
+        ///     Gets all audio files that belong to a project.
+        /// </summary>
+        /// <param name="projectId">The respective project id.</param>
+        /// <returns>Collection of audio files.</returns>
+        [HttpGet("byproject/{projectId}")]
+        public async Task<IActionResult> GetLatestAudioFilesAsync([FromRoute] Guid projectId)
+        {
+            // Prepare.
+            projectId.ThrowIfNullOrEmpty();
+
+            // Act and map.
+            var result = new List<AudioFileDTO>();
+            await foreach (var audioFile in _audioFileService.GetForProjectAsync(projectId, Pagination.Default, HttpContext.RequestAborted))
+            {
+                result.Add(_mapper.Map<AudioFileDTO>(audioFile));
+            }
+
+            // Return.
+            return Ok(result);
+        }
+
+        // TODO Pagination.
+        /// <summary>
+        ///     Search for audio files in our data store.
+        /// </summary>
+        /// <returns>Audio files search result.</returns>
+        [HttpGet("search")]
+        public async Task<IActionResult> SearchAudioFilesAsync(string query)
+        {
+            // Prepare.
+            query.ThrowIfNullOrEmpty();
+
+            // Act and map.
+            var result = new List<AudioFileDTO>();
+            await foreach (var audioFile in _audioFileService.SearchAsync(query, Pagination.Default, HttpContext.RequestAborted))
             {
                 result.Add(_mapper.Map<AudioFileDTO>(audioFile));
             }

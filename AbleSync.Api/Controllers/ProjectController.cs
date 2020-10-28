@@ -1,5 +1,6 @@
 ﻿using AbleSync.Api.DataTransferObjects;
 using AbleSync.Core.Interfaces.Repositories;
+using AbleSync.Core.Types;
 using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
 using RenameMe.Utility.Extensions;
@@ -55,11 +56,11 @@ namespace AbleSync.Api.Controllers
         /// </summary>
         /// <returns>Collection of projects.</returns>
         [HttpGet("all")]      
-        public async Task<IActionResult> GetProjectsAsync()
+        public async Task<IActionResult> GetAllProjectsAsync()
         {
             // Map.
             var result = new List<ProjectDTO>();
-            await foreach (var project in _projectRepository.GetAllAsync(HttpContext.RequestAborted))
+            await foreach (var project in _projectRepository.GetAllAsync(Pagination.Default, HttpContext.RequestAborted))
             {
                 result.Add(_mapper.Map<ProjectDTO>(project));
             }
@@ -79,7 +80,35 @@ namespace AbleSync.Api.Controllers
         {
             // Map.
             var result = new List<ProjectDTO>();
-            await foreach (var project in _projectRepository.GetLatestAsync(HttpContext.RequestAborted))
+            await foreach (var project in _projectRepository.GetLatestAsync(Pagination.Default, HttpContext.RequestAborted))
+            {
+                result.Add(_mapper.Map<ProjectDTO>(project));
+            }
+
+            // Return.
+            return Ok(result);
+        }
+
+        // TODO Pagination.
+        /// <summary>
+        ///     Search for projects from our data store.
+        /// </summary>
+        /// <returns>Project search results.</returns>
+        [HttpGet("search")]
+        public async Task<IActionResult> SearchProjectsAsync(string query)
+        {
+            // Prepare.
+            query.ThrowIfNullOrEmpty();
+
+            // TODO To service?
+            if (query.Length < 3)
+            {
+                throw new ArgumentException("Query string must be at least 3 characters long");
+            }
+
+            // Map.
+            var result = new List<ProjectDTO>();
+            await foreach (var project in _projectRepository.SearchAsync(query, Pagination.Default, HttpContext.RequestAborted))
             {
                 result.Add(_mapper.Map<ProjectDTO>(project));
             }
